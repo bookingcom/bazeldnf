@@ -23,7 +23,7 @@ use_repo(
     "org_golang_x_crypto"
 )
 
-rpm_deps = use_extension("//:extensions.bzl", "rpm_deps")
+rpm_deps = use_extension("//:extensions.bzl", "rpm_deps", dev_dependency = True)
 rpm_deps.rpm(
     name = "libvirt-libs-6.1.0-2.fc32.x86_64.rpm",
     sha256 = "3a0a3d88c6cb90008fbe49fe05e7025056fb9fa3a887c4a78f79e63f8745c845",
