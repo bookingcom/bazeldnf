@@ -5,6 +5,7 @@ import (
 
 	"github.com/bazelbuild/buildtools/build"
 	"github.com/rmohr/bazeldnf/cmd/template"
+	"github.com/rmohr/bazeldnf/pkg/api"
 	"github.com/rmohr/bazeldnf/pkg/bazel"
 	"github.com/rmohr/bazeldnf/pkg/reducer"
 	"github.com/rmohr/bazeldnf/pkg/repo"
@@ -29,6 +30,141 @@ type rpmtreeOpts struct {
 
 var rpmtreeopts = rpmtreeOpts{}
 
+func getRepoReducer() (*reducer.RepoReducer, error) {
+	repos, err := repo.LoadRepoFiles(rpmtreeopts.repofiles)
+	if err != nil {
+		return nil, err
+	}
+	repoReducer := reducer.NewRepoReducer(repos, nil, rpmtreeopts.lang, rpmtreeopts.baseSystem, rpmtreeopts.arch, ".bazeldnf")
+	logrus.Info("Loading packages.")
+	if err := repoReducer.Load(); err != nil {
+		return nil, err
+	}
+
+	logrus.Info("Loading packages.")
+	if err := repoReducer.Load(); err != nil {
+		return nil, err
+	}
+
+	return repoReducer, nil
+}
+
+func resolve(repoReducer *reducer.RepoReducer, required []string) ([]*api.Package, []*api.Package, error) {
+	logrus.Info("Initial reduction of involved packages.")
+	matched, involved, err := repoReducer.Resolve(required)
+	if err != nil {
+		return nil, nil, err
+	}
+	solver := sat.NewResolver(rpmtreeopts.nobest)
+	logrus.Info("Loading involved packages into the rpmtreer.")
+	err = solver.LoadInvolvedPackages(involved, rpmtreeopts.forceIgnoreRegex)
+	if err != nil {
+		return nil, nil, err
+	}
+	logrus.Info("Adding required packages to the rpmtreer.")
+	err = solver.ConstructRequirements(matched)
+	if err != nil {
+		return nil, nil, err
+	}
+	logrus.Info("Solving.")
+	install, _, forceIgnored, err := solver.Resolve()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return install, forceIgnored, err
+}
+
+func updateWorkspace(build *build.File, install []*api.Package) (error) {
+	workspace, err := bazel.LoadWorkspace(rpmtreeopts.workspace)
+	if err != nil {
+		return err
+	}
+
+	err = bazel.AddWorkspaceRPMs(workspace, install, rpmtreeopts.arch)
+	if err != nil {
+		return err
+	}
+
+	err = bazel.WriteWorkspace(false, workspace, rpmtreeopts.workspace)
+	if err != nil {
+		return err
+	}
+
+	bazel.PruneWorkspaceRPMs(build, workspace)
+
+	return nil
+}
+
+func updateMacro(build *build.File, install []*api.Package) error {
+	bzl, defName, err := bazel.ParseMacro(rpmtreeopts.toMacro)
+	if err != nil {
+		return err
+	}
+
+	bzlfile, err := bazel.LoadBzl(bzl)
+	if err != nil {
+		return err
+	}
+
+	err = bazel.AddBzlfileRPMs(bzlfile, defName, install, rpmtreeopts.arch)
+	if err != nil {
+		return err
+	}
+
+	bazel.PruneBzlfileRPMs(build, bzlfile, defName)
+
+	err = bazel.WriteBzl(false, bzlfile, bzl)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func implementation(cmd *cobra.Command, required []string) error {
+	// implementation for the rpmtree command
+
+	writeToMacro := rpmtreeopts.toMacro != ""
+
+	repoReducer, err := getRepoReducer()
+
+	if err != nil {
+		return err
+	}
+
+	install, forceIgnored, err := resolve(repoReducer, required)
+	if err != nil {
+		return err
+	}
+
+	build, err := bazel.LoadBuild(rpmtreeopts.buildfile)
+	if err != nil {
+		return err
+	}
+
+	bazel.AddTree(rpmtreeopts.name, build, install, rpmtreeopts.arch, rpmtreeopts.public)
+
+	logrus.Info("Writing bazel files.")
+	if writeToMacro {
+		updateMacro(build, install)
+	} else {
+		updateWorkspace(build, install)
+	}
+
+	err = bazel.WriteBuild(false, build, rpmtreeopts.buildfile)
+	if err != nil {
+		return err
+	}
+
+	// dump list of resolved packages
+	if err := template.Render(os.Stdout, install, forceIgnored); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func NewRpmTreeCmd() *cobra.Command {
 
 	rpmtreeCmd := &cobra.Command{
@@ -36,95 +172,7 @@ func NewRpmTreeCmd() *cobra.Command {
 		Short: "Writes a rpmtree rule and its rpmdependencies to bazel files",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, required []string) error {
-			writeToMacro := rpmtreeopts.toMacro != ""
-
-			repos, err := repo.LoadRepoFiles(rpmtreeopts.repofiles)
-			if err != nil {
-				return err
-			}
-			repoReducer := reducer.NewRepoReducer(repos, nil, rpmtreeopts.lang, rpmtreeopts.baseSystem, rpmtreeopts.arch, ".bazeldnf")
-			logrus.Info("Loading packages.")
-			if err := repoReducer.Load(); err != nil {
-				return err
-			}
-			logrus.Info("Initial reduction of involved packages.")
-			matched, involved, err := repoReducer.Resolve(required)
-			if err != nil {
-				return err
-			}
-			solver := sat.NewResolver(rpmtreeopts.nobest)
-			logrus.Info("Loading involved packages into the rpmtreer.")
-			err = solver.LoadInvolvedPackages(involved, rpmtreeopts.forceIgnoreRegex)
-			if err != nil {
-				return err
-			}
-			logrus.Info("Adding required packages to the rpmtreer.")
-			err = solver.ConstructRequirements(matched)
-			if err != nil {
-				return err
-			}
-			logrus.Info("Solving.")
-			install, _, forceIgnored, err := solver.Resolve()
-			if err != nil {
-				return err
-			}
-			workspace, err := bazel.LoadWorkspace(rpmtreeopts.workspace)
-			if err != nil {
-				return err
-			}
-			var bzlfile *build.File
-			var bzl, defName string
-			if writeToMacro {
-				bzl, defName, err = bazel.ParseMacro(rpmtreeopts.toMacro)
-				if err != nil {
-					return err
-				}
-				bzlfile, err = bazel.LoadBzl(bzl)
-				if err != nil {
-					return err
-				}
-			}
-			build, err := bazel.LoadBuild(rpmtreeopts.buildfile)
-			if err != nil {
-				return err
-			}
-			if writeToMacro {
-				err = bazel.AddBzlfileRPMs(bzlfile, defName, install, rpmtreeopts.arch)
-				if err != nil {
-					return err
-				}
-			} else {
-				err = bazel.AddWorkspaceRPMs(workspace, install, rpmtreeopts.arch)
-				if err != nil {
-					return err
-				}
-			}
-			bazel.AddTree(rpmtreeopts.name, build, install, rpmtreeopts.arch, rpmtreeopts.public)
-			if writeToMacro {
-				bazel.PruneBzlfileRPMs(build, bzlfile, defName)
-			} else {
-				bazel.PruneWorkspaceRPMs(build, workspace)
-			}
-			logrus.Info("Writing bazel files.")
-			err = bazel.WriteWorkspace(false, workspace, rpmtreeopts.workspace)
-			if err != nil {
-				return err
-			}
-			if writeToMacro {
-				err = bazel.WriteBzl(false, bzlfile, bzl)
-				if err != nil {
-					return err
-				}
-			}
-			err = bazel.WriteBuild(false, build, rpmtreeopts.buildfile)
-			if err != nil {
-				return err
-			}
-			if err := template.Render(os.Stdout, install, forceIgnored); err != nil {
-				return err
-			}
-
-			return nil
+			return implementation(cmd, required)
 		},
 	}
 
