@@ -2,8 +2,8 @@ package bazel
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/url"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -18,7 +18,7 @@ type Artifact struct {
 }
 
 func LoadWorkspace(path string) (*build.File, error) {
-	workspaceData, err := ioutil.ReadFile(path)
+	workspaceData, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse WORSPACE orig: %v", err)
 	}
@@ -30,7 +30,7 @@ func LoadWorkspace(path string) (*build.File, error) {
 }
 
 func LoadBuild(path string) (*build.File, error) {
-	buildfileData, err := ioutil.ReadFile(path)
+	buildfileData, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse BUILD.bazel orig: %v", err)
 	}
@@ -42,7 +42,7 @@ func LoadBuild(path string) (*build.File, error) {
 }
 
 func LoadBzl(path string) (*build.File, error) {
-	bzlData, err := ioutil.ReadFile(path)
+	bzlData, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse bzl orig: %v", err)
 	}
@@ -58,7 +58,7 @@ func WriteBuild(dryRun bool, buildfile *build.File, path string) error {
 		fmt.Println(build.FormatString(buildfile))
 		return nil
 	}
-	return ioutil.WriteFile(path, build.Format(buildfile), 0666)
+	return os.WriteFile(path, build.Format(buildfile), 0666)
 }
 
 func WriteWorkspace(dryRun bool, workspace *build.File, path string) error {
@@ -66,7 +66,7 @@ func WriteWorkspace(dryRun bool, workspace *build.File, path string) error {
 		fmt.Println(build.FormatString(workspace))
 		return nil
 	}
-	return ioutil.WriteFile(path, build.Format(workspace), 0666)
+	return os.WriteFile(path, build.Format(workspace), 0666)
 }
 
 func WriteBzl(dryRun bool, bzl *build.File, path string) error {
@@ -74,7 +74,7 @@ func WriteBzl(dryRun bool, bzl *build.File, path string) error {
 		fmt.Println(build.FormatString(bzl))
 		return nil
 	}
-	return ioutil.WriteFile(path, build.Format(bzl), 0666)
+	return os.WriteFile(path, build.Format(bzl), 0666)
 }
 
 // ParseMacro parses a macro expression of the form macroFile%defName and returns the bzl file and the def name.
