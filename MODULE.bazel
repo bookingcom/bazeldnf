@@ -49,6 +49,9 @@ rpm_deps.rpm(
         "https://download-ib01.fedoraproject.org/pub/fedora/linux/releases/32/Everything/x86_64/os/Packages/l/libvirt-devel-6.1.0-2.fc32.x86_64.rpm",
         "https://storage.googleapis.com/builddeps/2ebb715341b57a74759aff415e0ff53df528c49abaa7ba5b794b4047461fa8d6",
     ],
+    dependencies = [
+        "@libvirt-libs-6.1.0-2.fc32.x86_64.rpm//rpm:entry"
+    ]
 )
 use_repo(
     rpm_deps,

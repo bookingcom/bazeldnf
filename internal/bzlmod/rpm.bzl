@@ -6,7 +6,9 @@ def _rpm_deps_impl(module_ctx):
             _rpm_repository(
                 name = rpm.name,
                 sha256 = rpm.sha256,
+                integrity = rpm.integrity,
                 urls = rpm.urls,
+                dependencies = rpm.dependencies,
             )
 
     if not hasattr(module_ctx, "extension_metadata"):
@@ -21,6 +23,7 @@ _rpm_tag = tag_class(
         "urls": attr.string_list(),
         "strip_prefix": attr.string(),
         "integrity": attr.string(),
+        "dependencies": attr.label_list(),
     },
 )
 
