@@ -10,7 +10,6 @@ bazel_dep(name = "gazelle", version = "0.35.0", repo_name = "bazel_gazelle")
 
 go_deps = use_extension("@bazel_gazelle//:extensions.bzl", "go_deps")
 go_deps.from_file(go_mod = "//:go.mod")
-
 use_repo(
     go_deps,
     "com_github_bazelbuild_buildtools",
@@ -40,8 +39,13 @@ rpm_deps.rpm(
         "https://storage.googleapis.com/builddeps/2ebb715341b57a74759aff415e0ff53df528c49abaa7ba5b794b4047461fa8d6",
     ],
 )
-
 use_repo(
     rpm_deps,
     "libvirt-libs-6.1.0-2.fc32.x86_64.rpm",
+)
+
+bazel_dep(
+    name = "buildifier_prebuilt",
+    version = "6.4.0",
+    dev_dependency = True,
 )

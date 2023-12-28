@@ -1,18 +1,18 @@
 load("@bazel_gazelle//:def.bzl", "gazelle")
+load("@buildifier_prebuilt//:rules.bzl", "buildifier")
+load("//:def.bzl", "bazeldnf")
+load("//:deps.bzl", "rpmtree", "tar2files")
 
 # gazelle:prefix github.com/rmohr/bazeldnf
-# gazelle:resolve go github.com/bazelbuild/buildtools/build @com_github_bazelbuild_buildtools//build:go_default_library
-# gazelle:resolve go github.com/bazelbuild/buildtools/edit @com_github_bazelbuild_buildtools//edit:go_default_library
 gazelle(name = "gazelle")
-
-load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier")
 
 buildifier(
     name = "buildifier",
+    exclude_patterns = [
+        "./.git/*",
+    ],
+    mode = "fix",
 )
-
-load("//:deps.bzl", "rpmtree", "tar2files")
-load("//:def.bzl", "bazeldnf")
 
 bazeldnf(
     name = "bazeldnf",
