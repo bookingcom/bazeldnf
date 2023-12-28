@@ -15,17 +15,22 @@
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "update_attrs")
 
 RpmInfo = provider(
+    doc = "Keeps track of an RPM file and it's dependencies",
     fields = {
-        "dependencies": "depset of dependencies"
-    }
+        "target": "direct dependency",
+        "dependencies": "depset of dependencies",
+    },
 )
 
+
 def _rpm_rule_impl(ctx):
-    out = RpmInfo(dependencies = depset(ctx.attr.dependencies))
+    transitive = [x[RpmInfo].dependencies for x in ctx.attr.dependencies]
 
     return [
-        DefaultInfo(files = depset([ctx.file.rpm_file])),
-        out
+        RpmInfo(
+            target = ctx.label,
+            dependencies = depset(direct = [ctx.file.rpm_file], transitive = transitive)
+        )
     ]
 
 rpm_rule = rule(
@@ -48,7 +53,7 @@ filegroup(
 rpm_rule(
     name = "entry",
     rpm_file = "{downloaded_file_path}",
-    dependencies = []
+    dependencies = [{dependencies}]
 )
 """
 
@@ -66,7 +71,8 @@ def _rpm_impl(ctx):
     ctx.file("WORKSPACE", "workspace(name = \"{name}\")".format(name = ctx.name))
     build_content = _HTTP_FILE_BUILD.format(
         downloaded_file_path = downloaded_file_path,
-        repository_name = ctx.attr.bazeldnf
+        repository_name = ctx.attr.bazeldnf,
+        dependencies = ", ".join(['"%s"' % x for x in ctx.attr.dependencies])
     )
     ctx.file("rpm/BUILD", build_content)
     return update_attrs(ctx.attr, _rpm_attrs.keys(), {"sha256": download_info.sha256})

@@ -12,10 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load(":rpm.bzl", "RpmInfo")
+
 def _rpm2tar_impl(ctx):
     rpms = []
-    for rpm in ctx.files.rpms:
-        rpms += ["--input", rpm.path]
+    if ctx.attr.targets:
+        for t in ctx.attr.targets:
+            rpminfo = t[RpmInfo]
+            rpms.extend(rpminfo.dependencies.to_list())
+    else:
+        rpms.extend(ctx.files.rpms)
 
     out = ctx.outputs.out
     args = ["rpm2tar", "--output", out.path]
@@ -38,10 +44,11 @@ def _rpm2tar_impl(ctx):
             selinux_labels += [k + "=" + v]
         args += ["--selinux-labels", ",".join(selinux_labels)]
 
-    args += rpms
+    for rpm in rpms:
+        args += ["--input", rpm.path]
 
     ctx.actions.run(
-        inputs = ctx.files.rpms,
+        inputs = rpms,
         outputs = [out],
         arguments = args,
         mnemonic = "Rpm2Tar",
@@ -71,6 +78,7 @@ def _tar2files_impl(ctx):
 
 _rpm2tar_attrs = {
     "rpms": attr.label_list(allow_files = True),
+    "targets": attr.label_list(providers = [RpmInfo]),
     "_bazeldnf": attr.label(
         executable = True,
         cfg = "exec",

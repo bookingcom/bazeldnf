@@ -38,6 +38,25 @@ tar2files(
     visibility = ["//visibility:public"],
 )
 
+rpmtree(
+    name = "something_using_deps",
+    targets = [
+        "@libvirt-devel-6.1.0-2.fc32.x86_64.rpm//rpm:entry",
+    ]
+)
+
+tar2files(
+    name = "something_libs_using_deps",
+    files = {
+        "/usr/lib64": [
+            "libvirt.so.0",
+            "libvirt.so.0.6001.0",
+        ],
+    },
+    tar = ":something_using_deps",
+    visibility = ["//visibility:public"],
+)
+
 cc_library(
     name = "bar",
     srcs = ["//:something_libs/usr/lib64"],
