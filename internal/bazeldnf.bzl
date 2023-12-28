@@ -16,8 +16,10 @@ def _bazeldnf_impl(ctx):
     for lib in ctx.attr.libs:
         args += [lib]
 
+    bazeldnf = ctx.executable._bazeldnf if ctx.attr.use_prebuilt else ctx.executable._bazeldnf_cmd
+
     substitutions = {
-        "@@BAZELDNF_SHORT_PATH@@": shell.quote(ctx.executable._bazeldnf.short_path),
+        "@@BAZELDNF_SHORT_PATH@@": shell.quote(bazeldnf.short_path),
         "@@ARGS@@": shell.array_literal(args),
     }
     ctx.actions.expand_template(
@@ -27,7 +29,7 @@ def _bazeldnf_impl(ctx):
         is_executable = True,
     )
     runfiles = ctx.runfiles(
-        files = [ctx.executable._bazeldnf],
+        files = [bazeldnf],
         transitive_files = depset([], transitive = transitive_dependencies),
     )
     return [DefaultInfo(
@@ -51,9 +53,16 @@ _bazeldnf = rule(
         "rpmtree": attr.string(),
         "libs": attr.string_list(),
         "tar": attr.label(allow_single_file = True),
+        "use_prebuilt": attr.bool(default = True),
         "_bazeldnf": attr.label(
             default = "@bazeldnf//cmd:prebuilt",
-            cfg = "host",
+            cfg = "exec",
+            executable = True,
+            allow_files = True,
+        ),
+        "_bazeldnf_cmd": attr.label(
+            default = "@bazeldnf//cmd:cmd",
+            cfg = "exec",
             executable = True,
             allow_files = True,
         ),
