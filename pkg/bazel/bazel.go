@@ -1,6 +1,7 @@
 package bazel
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
@@ -11,7 +12,6 @@ import (
 	"github.com/bazelbuild/buildtools/build"
 	"github.com/bazelbuild/buildtools/edit"
 	"github.com/rmohr/bazeldnf/pkg/api"
-	"sigs.k8s.io/yaml"
 )
 
 type Artifact struct {
@@ -508,20 +508,20 @@ func sanitize(name string) string {
 }
 
 type BzlModLockFileRPM struct {
-		Name string      `yaml:"name"`
-		Sha256 string    `yaml:"sha256"`
+		Name string      `json:"name"`
+		Sha256 string    `json:"sha256"`
 		// TODO: we should figure out how to compute integrity out of sha256
-		Urls []string    `yaml:"urls"`
+		Urls []string    `json:"urls"`
 }
 
 type BzlModLockFile struct {
-	Name string          `yaml:"name"`
-	BaseSystem string    `yaml:"base-system"`
-	BuildFile string     `yaml:"build-file"`
-	RepoFiles []string   `yaml:"repo-files"`
-	Arch string          `yaml:"arch"`
+	Name string          `json:"name"`
+	BaseSystem string    `json:"base-system"`
+	BuildFile string     `json:"build-file"`
+	RepoFiles []string   `json:"repo-files"`
+	Arch string          `json:"arch"`
 
-	Rpms []BzlModLockFileRPM `yaml:"rpms"`
+	Rpms []BzlModLockFileRPM `json:"rpms"`
 }
 
 func LoadBzlModLockFile(path string) (*BzlModLockFile, error) {
@@ -537,7 +537,7 @@ func LoadBzlModLockFile(path string) (*BzlModLockFile, error) {
 	}
 
 	lock := &BzlModLockFile{}
-	err = yaml.Unmarshal(file, lock)
+	err = json.Unmarshal(file, &lock)
 	if err != nil {
 		return nil, err
 	}
@@ -565,7 +565,7 @@ func UpdateBzlModLockFile(lockContent *BzlModLockFile, lockFile string, pkgs []*
 
 	lockContent.Rpms = rpms
 
-	data, err := yaml.Marshal(lockContent)
+	data, err := json.MarshalIndent(lockContent, "", "    ")
 	if err != nil {
 		return err
 	}
