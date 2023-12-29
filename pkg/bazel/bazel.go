@@ -143,10 +143,6 @@ func GetListOfDependencies(pkg *api.Package, resolvedRpms *map[string]api.Packag
 	deps := make(map[string]*api.Package)
 
 	for _, req := range pkg.Format.Requires.Entries {
-		if req.Ver == "" {
-			logrus.Warnf("Ignoring require %s for %s", req.Name, pkg.Name)
-			continue
-		}
 		_, ok := (*resolvedRpms)[req.Name]
 		if !ok {
 			logrus.Warnf("No provider for %s requested by %s", req.Name, pkg.Name)
@@ -255,11 +251,6 @@ func AddBzlfileRPMs(bzlfile *build.File, defName string, pkgs []*api.Package, ar
 				return err
 			}
 		}
-		deps := GetListOfDependencies(pkg, resolvedRpms)
-		if deps == nil {
-			continue
-		}
-		rule.SetDependencies(deps, arch)
 	}
 
 	rules := []*RPMRule{}
