@@ -11,6 +11,7 @@ import (
 	"github.com/bazelbuild/buildtools/build"
 	"github.com/bazelbuild/buildtools/edit"
 	"github.com/rmohr/bazeldnf/pkg/api"
+	"sigs.k8s.io/yaml"
 )
 
 type Artifact struct {
@@ -407,15 +408,27 @@ func (r *RPMRule) URLs() []string {
 	return nil
 }
 
-func (r *RPMRule) SetURLs(mirrors []string, href string) error {
-	urlsAttr := []build.Expr{}
+func ComputeMirrorURLs(mirrors []string, href string) ([]string, error) {
+	var out []string
 	for _, mirror := range mirrors {
 		u, err := url.Parse(mirror)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		u = u.JoinPath(href)
-		urlsAttr = append(urlsAttr, &build.StringExpr{Value: u.String()})
+		out = append(out, u.String())
+	}
+	return out, nil
+}
+
+func (r *RPMRule) SetURLs(mirrors []string, href string) error {
+	urlsAttr := []build.Expr{}
+	urls, err := ComputeMirrorURLs(mirrors, href)
+	if err != nil {
+		return nil
+	}
+	for _, u := range urls {
+		urlsAttr = append(urlsAttr, &build.StringExpr{Value: u})
 	}
 	r.Rule.SetAttr("urls", &build.ListExpr{List: urlsAttr, ForceMultiLine: true})
 	return nil
@@ -492,4 +505,71 @@ func sanitize(name string) string {
 	name = strings.ReplaceAll(name, "~", "__tilde__")
 	name = strings.ReplaceAll(name, "^", "__caret__")
 	return name
+}
+
+type BzlModLockFileRPM struct {
+		Name string      `yaml:"name"`
+		Sha256 string    `yaml:"sha256"`
+		// TODO: we should figure out how to compute integrity out of sha256
+		Urls []string    `yaml:"urls"`
+}
+
+type BzlModLockFile struct {
+	Name string          `yaml:"name"`
+	BaseSystem string    `yaml:"base-system"`
+	BuildFile string     `yaml:"build-file"`
+	RepoFiles []string   `yaml:"repo-files"`
+	Arch string          `yaml:"arch"`
+
+	Rpms []BzlModLockFileRPM `yaml:"rpms"`
+}
+
+func LoadBzlModLockFile(path string) (*BzlModLockFile, error) {
+	_, err := os.Stat(path)
+
+	if os.IsNotExist(err) {
+		return nil, nil
+	}
+
+	file, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	lock := &BzlModLockFile{}
+	err = yaml.Unmarshal(file, lock)
+	if err != nil {
+		return nil, err
+	}
+
+	return lock, nil
+}
+
+func UpdateBzlModLockFile(lockContent *BzlModLockFile, lockFile string, pkgs []*api.Package, arch string) error {
+	var rpms []BzlModLockFileRPM
+	//lockContent.Rpms = make([]BzlModLockFileRPM, 0, len(pkgs))
+
+	sort.Slice(pkgs, func(i, j int) bool {
+		return pkgs[i].String() < pkgs[j].String()
+	})
+
+	for _, pkg := range pkgs {
+		pkgName := sanitize(pkg.String() + "." + arch)
+		urls, err := ComputeMirrorURLs(pkg.Repository.Mirrors, pkg.Location.Href)
+		if err != nil {
+			return err
+		}
+		line := BzlModLockFileRPM{ Name: pkgName, Sha256: pkg.Checksum.Text, Urls: urls }
+		rpms = append(rpms, line)
+	}
+
+	lockContent.Rpms = rpms
+
+	data, err := yaml.Marshal(lockContent)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(lockFile, data, 0644)
+
 }

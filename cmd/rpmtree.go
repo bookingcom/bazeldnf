@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 
 	"github.com/bazelbuild/buildtools/build"
@@ -26,6 +27,9 @@ type rpmtreeOpts struct {
 	name             string
 	public           bool
 	forceIgnoreRegex []string
+	bzlmod           bool
+	modules          string
+	lockFile         string
 }
 
 var rpmtreeopts = rpmtreeOpts{}
@@ -122,10 +126,73 @@ func updateMacro(build *build.File, install []*api.Package) error {
 	return nil
 }
 
+func updateBzlMod(bzlfile *build.File, lockFile *bazel.BzlModLockFile, install []*api.Package) error {
+	err := bazel.UpdateBzlModLockFile(lockFile, rpmtreeopts.lockFile, install, rpmtreeopts.arch)
+	if err != nil {
+		return err
+	}
+
+	return errors.New("updating MODULE.bazel not yet implemented")
+}
+
+func loadBzlModLockFile() (*bazel.BzlModLockFile, error) {
+	if (!rpmtreeopts.bzlmod) {
+		return nil, nil
+	}
+
+	bzlModLockFile, err := bazel.LoadBzlModLockFile(rpmtreeopts.lockFile);
+
+	if err != nil {
+		return nil, err
+	}
+
+	if bzlModLockFile == nil {
+		return &bazel.BzlModLockFile{
+			BaseSystem: rpmtreeopts.baseSystem,
+			RepoFiles: rpmtreeopts.repofiles,
+			Name: rpmtreeopts.name,
+			BuildFile: rpmtreeopts.buildfile,
+			Arch: rpmtreeopts.arch,
+		}, nil
+	}
+
+	if (bzlModLockFile.BaseSystem != "") {
+		rpmtreeopts.baseSystem = bzlModLockFile.BaseSystem;
+	}
+
+	if (len(bzlModLockFile.RepoFiles) > 0) {
+		rpmtreeopts.repofiles = bzlModLockFile.RepoFiles
+	}
+
+	if (bzlModLockFile.Name != "") {
+		rpmtreeopts.name = bzlModLockFile.Name
+	}
+
+	if (bzlModLockFile.BuildFile != "") {
+		rpmtreeopts.buildfile = bzlModLockFile.BuildFile
+	}
+
+	if (bzlModLockFile.Arch != "" ) {
+		rpmtreeopts.arch = bzlModLockFile.Arch
+	}
+
+	return bzlModLockFile, err
+}
+
 func implementation(cmd *cobra.Command, required []string) error {
 	// implementation for the rpmtree command
 
 	writeToMacro := rpmtreeopts.toMacro != ""
+	doBzlMod := rpmtreeopts.bzlmod
+
+	if rpmtreeopts.bzlmod && rpmtreeopts.lockFile == "" {
+		return errors.New("you need to pass --lock-file if you are enabling --bzlmod")
+	}
+
+	bzlModLockFile, err := loadBzlModLockFile()
+	if err != nil {
+		return err
+	}
 
 	repoReducer, err := getRepoReducer()
 
@@ -147,9 +214,15 @@ func implementation(cmd *cobra.Command, required []string) error {
 
 	logrus.Info("Writing bazel files.")
 	if writeToMacro {
-		updateMacro(build, install)
+		err = updateMacro(build, install)
+	} else if doBzlMod {
+		err = updateBzlMod(build, bzlModLockFile, install)
 	} else {
-		updateWorkspace(build, install)
+		err = updateWorkspace(build, install)
+	}
+
+	if err != nil{
+		return err
 	}
 
 	err = bazel.WriteBuild(false, build, rpmtreeopts.buildfile)
@@ -186,11 +259,14 @@ func NewRpmTreeCmd() *cobra.Command {
 	rpmtreeCmd.Flags().StringVarP(&rpmtreeopts.buildfile, "buildfile", "b", "rpm/BUILD.bazel", "Build file for RPMs")
 	rpmtreeCmd.Flags().StringVar(&rpmtreeopts.name, "name", "", "rpmtree rule name")
 	rpmtreeCmd.Flags().StringArrayVar(&rpmtreeopts.forceIgnoreRegex, "force-ignore-with-dependencies", []string{}, "Packages matching these regex patterns will not be installed. Allows force-removing unwanted dependencies. Be careful, this can lead to hidden missing dependencies.")
+	rpmtreeCmd.Flags().BoolVarP(&rpmtreeopts.bzlmod, "bzlmod", "B", false, "enable bzlmod support")
 	rpmtreeCmd.MarkFlagRequired("name")
 	// deprecated options
 	rpmtreeCmd.Flags().StringVarP(&rpmtreeopts.baseSystem, "fedora-base-system", "f", "fedora-release-container", "base system to use (e.g. fedora-release-server, centos-stream-release, ...)")
 	rpmtreeCmd.Flags().MarkDeprecated("fedora-base-system", "use --basesystem instead")
 	rpmtreeCmd.Flags().MarkShorthandDeprecated("fedora-base-system", "use --basesystem instead")
 	rpmtreeCmd.Flags().MarkShorthandDeprecated("nobest", "use --nobest instead")
+	rpmtreeCmd.Flags().StringVarP(&rpmtreeopts.modules, "modules-bazel", "m", "MODULE.bazel", "Bazel modules file")
+	rpmtreeCmd.Flags().StringVarP(&rpmtreeopts.lockFile, "lock-file", "l", "", "YAML lock file that will hold the data for this packages")
 	return rpmtreeCmd
 }
