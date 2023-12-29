@@ -42,7 +42,7 @@ rpmtree(
     name = "something_using_deps",
     targets = [
         "@libvirt-devel-6.1.0-2.fc32.x86_64.rpm//rpm:entry",
-    ]
+    ],
 )
 
 tar2files(

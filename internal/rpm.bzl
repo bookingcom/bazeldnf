@@ -22,23 +22,22 @@ RpmInfo = provider(
     },
 )
 
-
 def _rpm_rule_impl(ctx):
     transitive = [x[RpmInfo].dependencies for x in ctx.attr.dependencies]
 
     return [
         RpmInfo(
             target = ctx.label,
-            dependencies = depset(direct = [ctx.file.rpm_file], transitive = transitive)
-        )
+            dependencies = depset(direct = [ctx.file.rpm_file], transitive = transitive),
+        ),
     ]
 
 rpm_rule = rule(
     implementation = _rpm_rule_impl,
     attrs = {
         "dependencies": attr.label_list(providers = [RpmInfo]),
-        "rpm_file": attr.label(allow_single_file = True)
-    }
+        "rpm_file": attr.label(allow_single_file = True),
+    },
 )
 
 _HTTP_FILE_BUILD = """
@@ -72,7 +71,7 @@ def _rpm_impl(ctx):
     build_content = _HTTP_FILE_BUILD.format(
         downloaded_file_path = downloaded_file_path,
         repository_name = ctx.attr.bazeldnf,
-        dependencies = ", ".join(['"%s"' % x for x in ctx.attr.dependencies])
+        dependencies = ", ".join(['"%s"' % x for x in ctx.attr.dependencies]),
     )
     ctx.file("rpm/BUILD", build_content)
     return update_attrs(ctx.attr, _rpm_attrs.keys(), {"sha256": download_info.sha256})
@@ -83,11 +82,10 @@ _rpm_attrs = {
     "sha256": attr.string(),
     "integrity": attr.string(),
     "dependencies": attr.label_list(),
-    "bazeldnf": attr.string(default="bazeldnf"),
+    "bazeldnf": attr.string(default = "bazeldnf"),
 }
 
 rpm = repository_rule(
     implementation = _rpm_impl,
     attrs = _rpm_attrs,
-
 )
