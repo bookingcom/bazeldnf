@@ -9,6 +9,7 @@ go_library(
         "//pkg/api",
         "@com_github_bazelbuild_buildtools//build",
         "@com_github_bazelbuild_buildtools//edit",
+        "@com_github_sirupsen_logrus//:logrus",
     ],
 )
 

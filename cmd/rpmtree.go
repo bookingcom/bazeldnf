@@ -75,13 +75,13 @@ func resolve(repoReducer *reducer.RepoReducer, required []string) ([]*api.Packag
 	return install, forceIgnored, err
 }
 
-func updateWorkspace(build *build.File, install []*api.Package) (error) {
+func updateWorkspace(build *build.File, install []*api.Package, resolvedRpms map[string]api.Package) (error) {
 	workspace, err := bazel.LoadWorkspace(rpmtreeopts.workspace)
 	if err != nil {
 		return err
 	}
 
-	err = bazel.AddWorkspaceRPMs(workspace, install, rpmtreeopts.arch)
+	err = bazel.AddWorkspaceRPMs(workspace, install, rpmtreeopts.arch, &resolvedRpms)
 	if err != nil {
 		return err
 	}
@@ -96,7 +96,7 @@ func updateWorkspace(build *build.File, install []*api.Package) (error) {
 	return nil
 }
 
-func updateMacro(build *build.File, install []*api.Package) error {
+func updateMacro(build *build.File, install []*api.Package, resolvedRpms map[string]api.Package) error {
 	bzl, defName, err := bazel.ParseMacro(rpmtreeopts.toMacro)
 	if err != nil {
 		return err
@@ -107,7 +107,7 @@ func updateMacro(build *build.File, install []*api.Package) error {
 		return err
 	}
 
-	err = bazel.AddBzlfileRPMs(bzlfile, defName, install, rpmtreeopts.arch)
+	err = bazel.AddBzlfileRPMs(bzlfile, defName, install, rpmtreeopts.arch, &resolvedRpms)
 	if err != nil {
 		return err
 	}
@@ -145,11 +145,16 @@ func implementation(cmd *cobra.Command, required []string) error {
 
 	bazel.AddTree(rpmtreeopts.name, build, install, rpmtreeopts.arch, rpmtreeopts.public)
 
+	resolvedRpms, err := bazel.GetResolvedRPMsMapping(install)
+	if err != nil {
+		return err
+	}
+
 	logrus.Info("Writing bazel files.")
 	if writeToMacro {
-		updateMacro(build, install)
+		updateMacro(build, install, resolvedRpms)
 	} else {
-		updateWorkspace(build, install)
+		updateWorkspace(build, install, resolvedRpms)
 	}
 
 	err = bazel.WriteBuild(false, build, rpmtreeopts.buildfile)
