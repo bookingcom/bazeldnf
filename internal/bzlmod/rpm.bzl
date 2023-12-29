@@ -34,31 +34,39 @@ _rpm_repo = repository_rule(
     },
 )
 
+def _handle_lock_file(module_ctx, lock_file):
+    content = module_ctx.read(lock_file.path)
+    content = json.decode(content)
+    repos = []
+    for rpm in content["rpms"]:
+        _rpm_repository(
+            name = rpm["name"],
+            sha256 = rpm.get("sha256", None),
+            integrity = rpm.get("integrity", None),
+            urls = rpm.get("urls", []),
+        )
+        repos.append("@%s//rpm" % rpm["name"])
+    _rpm_repo(
+        name = lock_file.rpm_tree_name,
+        bazeldnf = lock_file.bazeldnf,
+        generated_visibility = lock_file.generated_visibility,
+        rpms = repos,
+    )
+    return lock_file.rpm_tree_name, module_ctx.is_dev_dependency(lock_file)
+
 def _rpm_deps_impl(module_ctx):
     public_repos = []
+    is_dev_dependency = False
     for module in module_ctx.modules:
         if module.tags.lock_file:
             for lock_file in module.tags.lock_file:
-                content = module_ctx.read(lock_file.path)
-                content = json.decode(content)
-                repos = []
-                for rpm in content["rpms"]:
-                    _rpm_repository(
-                        name = rpm["name"],
-                        sha256 = rpm.get("sha256", None),
-                        integrity = rpm.get("integrity", None),
-                        urls = rpm.get("urls", []),
-                    )
-                    repos.append("@%s//rpm" % rpm["name"])
-                _rpm_repo(
-                    name = lock_file.rpm_tree_name,
-                    bazeldnf = lock_file.bazeldnf,
-                    generated_visibility = lock_file.generated_visibility,
-                    rpms = repos,
-                )
-                public_repos.append(lock_file.rpm_tree_name)
+                repo_name, _is_dev_dependency = _handle_lock_file(module_ctx, lock_file)
+                public_repos.append(repo_name)
+                is_dev_dependency = is_dev_dependency or _is_dev_dependency
 
         for rpm in module.tags.rpm:
+            is_dev_dependency = is_dev_dependency or module_ctx.is_dev_dependency(rpm)
+
             _rpm_repository(
                 name = rpm.name,
                 sha256 = rpm.sha256,
@@ -68,7 +76,7 @@ def _rpm_deps_impl(module_ctx):
             )
             public_repos.append(rpm.name)
 
-    if not hasattr(module_ctx, "extension_metadata"):
+    if not hasattr(module_ctx, "extension_metadata") or is_dev_dependency:
         return None
 
     return module_ctx.extension_metadata(
