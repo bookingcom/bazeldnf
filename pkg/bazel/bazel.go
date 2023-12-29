@@ -11,7 +11,6 @@ import (
 	"github.com/bazelbuild/buildtools/build"
 	"github.com/bazelbuild/buildtools/edit"
 	"github.com/rmohr/bazeldnf/pkg/api"
-	"github.com/sirupsen/logrus"
 )
 
 type Artifact struct {
@@ -52,18 +51,6 @@ func LoadBzl(path string) (*build.File, error) {
 		return nil, fmt.Errorf("failed to parse bzl orig: %v", err)
 	}
 	return bzl, nil
-}
-
-func LoadModule(path string) (*build.File, error) {
-	moduleData, err := os.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse %s: %v", path, err)
-	}
-	module, err := build.ParseModule(path, moduleData)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse %s: %v", path, err)
-	}
-	return module, nil
 }
 
 func WriteBuild(dryRun bool, buildfile *build.File, path string) error {
@@ -118,54 +105,7 @@ func GetBzlfileRPMs(bzlfile *build.File, defName string) (rpms []*RPMRule) {
 	return
 }
 
-func GetResolvedRPMsMapping(pkgs []*api.Package) (map[string]api.Package, error) {
-	resolvedRpms := make(map[string]api.Package);
-	for _, pkg := range pkgs {
-		for _, provide := range pkg.Format.Provides.Entries {
-			if _, ok:= resolvedRpms[provide.Name]; ok {
-				if strings.Compare(resolvedRpms[provide.Name].Name, pkg.Name) != 0 {
-					return nil, fmt.Errorf("duplicated provider %s found for packages %s", pkg.Name, resolvedRpms[provide.Name].Name)
-				}
-				continue
-			}
-			resolvedRpms[provide.Name] = *pkg
-		}
-	}
-
-	return resolvedRpms, nil
-}
-
-func GetListOfDependencies(pkg *api.Package, resolvedRpms *map[string]api.Package) ([]api.Package) {
-	if resolvedRpms == nil {
-		return nil
-	}
-
-	deps := make(map[string]*api.Package)
-
-	for _, req := range pkg.Format.Requires.Entries {
-		_, ok := (*resolvedRpms)[req.Name]
-		if !ok {
-			logrus.Warnf("No provider for %s requested by %s", req.Name, pkg.Name)
-			continue
-		}
-		dep := (*resolvedRpms)[req.Name]
-		deps[dep.Name] = &dep
-	}
-
-	values := make([]api.Package, 0, len(deps))
-
-	for _, value := range(deps) {
-		values = append(values, *value)
-	}
-
-	sort.SliceStable(values, func(i, j int) bool {
-		return values[i].Name < values[j].Name
-	})
-
-	return values
-}
-
-func AddWorkspaceRPMs(workspace *build.File, pkgs []*api.Package, arch string, resolvedRpms *map[string]api.Package) error {
+func AddWorkspaceRPMs(workspace *build.File, pkgs []*api.Package, arch string) error {
 
 	rpms := map[string]*RPMRule{}
 
@@ -193,13 +133,6 @@ func AddWorkspaceRPMs(workspace *build.File, pkgs []*api.Package, arch string, r
 			}
 		}
 		rule.SetSHA256(pkg.Checksum.Text)
-
-		deps := GetListOfDependencies(pkg, resolvedRpms)
-		if deps == nil {
-			continue
-		}
-
-		rule.SetDependencies(deps, arch)
 	}
 
 	rules := []*RPMRule{}
@@ -219,7 +152,7 @@ func AddWorkspaceRPMs(workspace *build.File, pkgs []*api.Package, arch string, r
 	return nil
 }
 
-func AddBzlfileRPMs(bzlfile *build.File, defName string, pkgs []*api.Package, arch string, resolvedRpms *map[string]api.Package) error {
+func AddBzlfileRPMs(bzlfile *build.File, defName string, pkgs []*api.Package, arch string) error {
 	defStmt, err := findDefStmt(bzlfile.Stmt, defName)
 	if err != nil {
 		// statement not found, create it
@@ -474,25 +407,6 @@ func (r *RPMRule) URLs() []string {
 	return nil
 }
 
-func (r *RPMRule) Dependencies() []string {
-	depsAttr := r.Rule.Attr("dependencies")
-	if depsAttr == nil {
-		return nil
-	}
-
-	depsList, ok := depsAttr.(*build.ListExpr)
-	if !ok {
-		return nil
-	}
-
-	deps := []string{}
-	for _, dep := range depsList.List {
-		deps = append(deps, dep.(*build.StringExpr).Value)
-	}
-
-	return deps
-}
-
 func (r *RPMRule) SetURLs(mirrors []string, href string) error {
 	urlsAttr := []build.Expr{}
 	for _, mirror := range mirrors {
@@ -504,23 +418,6 @@ func (r *RPMRule) SetURLs(mirrors []string, href string) error {
 		urlsAttr = append(urlsAttr, &build.StringExpr{Value: u.String()})
 	}
 	r.Rule.SetAttr("urls", &build.ListExpr{List: urlsAttr, ForceMultiLine: true})
-	return nil
-}
-
-func (r *RPMRule) SetDependencies(dependencies []api.Package, arch string) error {
-	depsAttr := &build.ListExpr{
-		List: make([]build.Expr, len(dependencies)),
-		ForceMultiLine: true,
-	}
-
-	for i, dep := range dependencies {
-		pkgName := sanitize(dep.String() + "." + arch)
-		depLabel := "@" + pkgName + "//rpm:entry"
-		depsAttr.List[i] = &build.StringExpr{Value: depLabel}
-	}
-
-	r.Rule.SetAttr("dependencies", depsAttr)
-
 	return nil
 }
 
