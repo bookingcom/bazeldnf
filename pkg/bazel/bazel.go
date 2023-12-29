@@ -520,10 +520,13 @@ type BzlModLockFile struct {
 	BuildFile string     `json:"build-file"`
 	RepoFiles []string   `json:"repo-files"`
 	Arch string          `json:"arch"`
+	Required []string    `json:"required"`
+	Version int          `json:"version"`
 
 	Rpms []BzlModLockFileRPM `json:"rpms"`
 }
 
+const CURRENT_LOCK_FILE_VERSION = 1
 func LoadBzlModLockFile(path string) (*BzlModLockFile, error) {
 	_, err := os.Stat(path)
 
@@ -542,12 +545,20 @@ func LoadBzlModLockFile(path string) (*BzlModLockFile, error) {
 		return nil, err
 	}
 
+	if lock.Version != CURRENT_LOCK_FILE_VERSION {
+		// TODO: maybe we should have a migration path
+		return nil, fmt.Errorf("lock file version %d is not supported, expected %d", lock.Version, CURRENT_LOCK_FILE_VERSION)
+	}
+
+	sort.Slice(lock.Required, func(i, j int) bool {
+		return lock.Required[i] < lock.Required[j]
+	})
+
 	return lock, nil
 }
 
 func UpdateBzlModLockFile(lockContent *BzlModLockFile, lockFile string, pkgs []*api.Package, arch string) error {
 	var rpms []BzlModLockFileRPM
-	//lockContent.Rpms = make([]BzlModLockFileRPM, 0, len(pkgs))
 
 	sort.Slice(pkgs, func(i, j int) bool {
 		return pkgs[i].String() < pkgs[j].String()
@@ -564,6 +575,8 @@ func UpdateBzlModLockFile(lockContent *BzlModLockFile, lockFile string, pkgs []*
 	}
 
 	lockContent.Rpms = rpms
+
+	lockContent.Version = CURRENT_LOCK_FILE_VERSION
 
 	data, err := json.MarshalIndent(lockContent, "", "    ")
 	if err != nil {

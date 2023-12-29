@@ -2,7 +2,10 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"os"
+	"reflect"
+	"sort"
 
 	"github.com/bazelbuild/buildtools/build"
 	"github.com/rmohr/bazeldnf/cmd/template"
@@ -126,13 +129,38 @@ func updateMacro(build *build.File, install []*api.Package) error {
 	return nil
 }
 
-func updateBzlMod(bzlfile *build.File, lockFile *bazel.BzlModLockFile, install []*api.Package) error {
+func updateBzlMod(lockFile *bazel.BzlModLockFile, install []*api.Package, required []string) error {
+	lockFile.Required = required
+
 	err := bazel.UpdateBzlModLockFile(lockFile, rpmtreeopts.lockFile, install, rpmtreeopts.arch)
 	if err != nil {
 		return err
 	}
 
 	return errors.New("updating MODULE.bazel not yet implemented")
+}
+
+func updateLegacy(writeToMacro bool, install []*api.Package) error {
+	build, err := bazel.LoadBuild(rpmtreeopts.buildfile)
+
+	if err != nil {
+		return err
+	}
+
+	bazel.AddTree(rpmtreeopts.name, build, install, rpmtreeopts.arch, rpmtreeopts.public)
+
+	if writeToMacro {
+		err = updateMacro(build, install)
+	} else {
+		err = updateWorkspace(build, install)
+	}
+
+	if err != nil{
+		return err
+	}
+
+	err = bazel.WriteBuild(false, build, rpmtreeopts.buildfile)
+	return err
 }
 
 func loadBzlModLockFile() (*bazel.BzlModLockFile, error) {
@@ -194,6 +222,15 @@ func implementation(cmd *cobra.Command, required []string) error {
 		return err
 	}
 
+	if (bzlModLockFile != nil) {
+		sort.Slice(required, func(i, j int) bool {
+			return required[i] < required[j]
+		})
+		if (len(bzlModLockFile.Required) > 0 && ! reflect.DeepEqual(bzlModLockFile.Required, required)) {
+			return fmt.Errorf("required packages from lock file (%v) do not match command line (%v), lock file needs to be recreated", bzlModLockFile.Required, required)
+		}
+	}
+
 	repoReducer, err := getRepoReducer()
 
 	if err != nil {
@@ -205,27 +242,13 @@ func implementation(cmd *cobra.Command, required []string) error {
 		return err
 	}
 
-	build, err := bazel.LoadBuild(rpmtreeopts.buildfile)
-	if err != nil {
-		return err
-	}
-
-	bazel.AddTree(rpmtreeopts.name, build, install, rpmtreeopts.arch, rpmtreeopts.public)
-
 	logrus.Info("Writing bazel files.")
-	if writeToMacro {
-		err = updateMacro(build, install)
-	} else if doBzlMod {
-		err = updateBzlMod(build, bzlModLockFile, install)
+	if doBzlMod {
+		err = updateBzlMod(bzlModLockFile, install, required)
 	} else {
-		err = updateWorkspace(build, install)
+		err = updateLegacy(writeToMacro, install)
 	}
 
-	if err != nil{
-		return err
-	}
-
-	err = bazel.WriteBuild(false, build, rpmtreeopts.buildfile)
 	if err != nil {
 		return err
 	}
