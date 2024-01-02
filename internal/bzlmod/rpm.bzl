@@ -34,17 +34,20 @@ _rpm_repo = repository_rule(
     },
 )
 
-def _handle_lock_file(module_ctx, lock_file):
+def _handle_lock_file(module_ctx, lock_file, repositories):
     content = module_ctx.read(lock_file.path)
     content = json.decode(content)
     repos = []
     for rpm in content["rpms"]:
-        _rpm_repository(
-            name = rpm["name"],
-            sha256 = rpm.get("sha256", None),
-            integrity = rpm.get("integrity", None),
-            urls = rpm.get("urls", []),
-        )
+        if rpm["name"] not in repositories:
+            _rpm_repository(
+                name = rpm["name"],
+                sha256 = rpm.get("sha256", None),
+                integrity = rpm.get("integrity", None),
+                urls = rpm.get("urls", []),
+            )
+            repositories[rpm["name"]] = rpm
+
         repos.append("@%s//rpm" % rpm["name"])
     _rpm_repo(
         name = lock_file.rpm_tree_name,
@@ -57,10 +60,12 @@ def _handle_lock_file(module_ctx, lock_file):
 def _rpm_deps_impl(module_ctx):
     public_repos = []
     is_dev_dependency = False
+    repositories = dict()
+
     for module in module_ctx.modules:
         if module.tags.lock_file:
             for lock_file in module.tags.lock_file:
-                repo_name, _is_dev_dependency = _handle_lock_file(module_ctx, lock_file)
+                repo_name, _is_dev_dependency = _handle_lock_file(module_ctx, lock_file, repositories)
                 public_repos.append(repo_name)
                 is_dev_dependency = is_dev_dependency or _is_dev_dependency
 
