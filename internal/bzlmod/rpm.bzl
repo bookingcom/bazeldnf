@@ -1,5 +1,6 @@
 load("//:deps.bzl", _rpm_repository = "rpm")
 
+
 __BUILD_FILE_CONTENT__ = """
 load("@{repository_name}//:deps.bzl", "rpmtree")
 
@@ -12,18 +13,41 @@ rpmtree(
         {visibility}
     ]
 )
+
+{rpm_aliases}
 """
 
 def _rpm_repo_impl(repo_ctx):
     repo_ctx.file("WORKSPACE", "workspace(name = '%s')" % repo_ctx.name)
-    rpms = ", \n        ".join(['"%s"' % x for x in repo_ctx.attr.rpms])
+    rpms = []
+    list_of_rpm = []
+    rpm_aliases = []
     visibility = ", \n        ".join(['"%s"' % x for x in repo_ctx.attr.generated_visibility])
+    for rpm in repo_ctx.attr.rpms:
+        rpms.append('"%s"' % rpm)
+        alias = 'rpm_%s' % rpm.replace('-', '_').replace('@', '').split('//', 1)[0]
+        list_of_rpm.append(
+            '"@{repo}//:{alias}"'.format(repo = repo_ctx.name.rsplit('~',1)[-1], alias = alias)
+        )
+        rpm_aliases.append(
+            'alias( name = "{alias}", actual = "{rpm}", visibility = [ {visibility}] )'.format(
+                alias = alias,
+                rpm = rpm,
+                visibility = visibility
+            )
+        )
+
+    rpms = ", \n        ".join(rpms)
+    list_of_rpm = ",\n    ".join(list_of_rpm)
+    rpm_aliases = "\n".join(rpm_aliases)
     build_content = __BUILD_FILE_CONTENT__.format(
         repository_name = repo_ctx.attr.bazeldnf,
         rpms = rpms,
         visibility = visibility,
+        rpm_aliases = rpm_aliases,
     )
     repo_ctx.file("BUILD.bazel", build_content)
+    repo_ctx.file("rpms.bzl", "RPMS = [\n    %s\n]\n" % list_of_rpm)
 
 _rpm_repo = repository_rule(
     implementation = _rpm_repo_impl,
@@ -72,13 +96,15 @@ def _rpm_deps_impl(module_ctx):
         for rpm in module.tags.rpm:
             is_dev_dependency = is_dev_dependency or module_ctx.is_dev_dependency(rpm)
 
-            _rpm_repository(
-                name = rpm.name,
-                sha256 = rpm.sha256,
-                integrity = rpm.integrity,
-                urls = rpm.urls,
-                dependencies = rpm.dependencies,
-            )
+            if rpm.name not in repositories:
+                _rpm_repository(
+                    name = rpm.name,
+                    sha256 = rpm.sha256,
+                    integrity = rpm.integrity,
+                    urls = rpm.urls,
+                    dependencies = rpm.dependencies,
+                )
+                repositories[rpm.name] = rpm
             public_repos.append(rpm.name)
 
     if not hasattr(module_ctx, "extension_metadata") or is_dev_dependency:
