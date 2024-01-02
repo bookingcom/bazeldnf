@@ -1,7 +1,6 @@
 package bazel
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
@@ -505,84 +504,4 @@ func sanitize(name string) string {
 	name = strings.ReplaceAll(name, "~", "__tilde__")
 	name = strings.ReplaceAll(name, "^", "__caret__")
 	return name
-}
-
-type BzlModLockFileRPM struct {
-		Name string      `json:"name"`
-		Sha256 string    `json:"sha256"`
-		// TODO: we should figure out how to compute integrity out of sha256
-		Urls []string    `json:"urls"`
-}
-
-type BzlModLockFile struct {
-	Name string          `json:"name"`
-	BaseSystem string    `json:"base-system"`
-	BuildFile string     `json:"build-file"`
-	RepoFiles []string   `json:"repo-files"`
-	Arch string          `json:"arch"`
-	Required []string    `json:"required"`
-	Version int          `json:"version"`
-
-	Rpms []BzlModLockFileRPM `json:"rpms"`
-}
-
-const CURRENT_LOCK_FILE_VERSION = 1
-func LoadBzlModLockFile(path string) (*BzlModLockFile, error) {
-	_, err := os.Stat(path)
-
-	if os.IsNotExist(err) {
-		return nil, nil
-	}
-
-	file, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-
-	lock := &BzlModLockFile{}
-	err = json.Unmarshal(file, &lock)
-	if err != nil {
-		return nil, err
-	}
-
-	if lock.Version != CURRENT_LOCK_FILE_VERSION {
-		// TODO: maybe we should have a migration path
-		return nil, fmt.Errorf("lock file version %d is not supported, expected %d", lock.Version, CURRENT_LOCK_FILE_VERSION)
-	}
-
-	sort.Slice(lock.Required, func(i, j int) bool {
-		return lock.Required[i] < lock.Required[j]
-	})
-
-	return lock, nil
-}
-
-func UpdateBzlModLockFile(lockContent *BzlModLockFile, lockFile string, pkgs []*api.Package, arch string) error {
-	var rpms []BzlModLockFileRPM
-
-	sort.Slice(pkgs, func(i, j int) bool {
-		return pkgs[i].String() < pkgs[j].String()
-	})
-
-	for _, pkg := range pkgs {
-		pkgName := sanitize(pkg.String() + "." + arch)
-		urls, err := ComputeMirrorURLs(pkg.Repository.Mirrors, pkg.Location.Href)
-		if err != nil {
-			return err
-		}
-		line := BzlModLockFileRPM{ Name: pkgName, Sha256: pkg.Checksum.Text, Urls: urls }
-		rpms = append(rpms, line)
-	}
-
-	lockContent.Rpms = rpms
-
-	lockContent.Version = CURRENT_LOCK_FILE_VERSION
-
-	data, err := json.MarshalIndent(lockContent, "", "    ")
-	if err != nil {
-		return err
-	}
-
-	return os.WriteFile(lockFile, data, 0644)
-
 }

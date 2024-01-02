@@ -6,6 +6,7 @@ import (
 	"os"
 	"reflect"
 	"sort"
+	"strings"
 
 	"github.com/bazelbuild/buildtools/build"
 	"github.com/rmohr/bazeldnf/cmd/template"
@@ -129,15 +130,45 @@ func updateMacro(build *build.File, install []*api.Package) error {
 	return nil
 }
 
-func updateBzlMod(lockFile *bazel.BzlModLockFile, install []*api.Package, required []string) error {
-	lockFile.Required = required
-
-	err := bazel.UpdateBzlModLockFile(lockFile, rpmtreeopts.lockFile, install, rpmtreeopts.arch)
+func updateBzlMod(install []*api.Package, required []string) error {
+	lockFile, err := loadBzlModLockFile()
 	if err != nil {
 		return err
 	}
 
-	return errors.New("updating MODULE.bazel not yet implemented")
+	lockFile.Required = required
+
+	err = bazel.UpdateBzlModLockFile(lockFile, rpmtreeopts.lockFile, install, rpmtreeopts.arch)
+	if err != nil {
+		return err
+	}
+
+	module, err := bazel.LoadModule(rpmtreeopts.modules)
+	if err != nil {
+		return err
+	}
+
+	found := false
+	existingLockFiles := bazel.GetLockFileInstances(module)
+	for _, entry := range(existingLockFiles) {
+		if (strings.Index(rpmtreeopts.lockFile, entry.Path) > -1 && entry.RpmTreeName == rpmtreeopts.name) {
+			found = true
+		}
+	}
+
+	if !found {
+		entry := bazel.LockFileArgs{
+			Path: rpmtreeopts.lockFile,
+			RpmTreeName: rpmtreeopts.name,
+		}
+		if rpmtreeopts.public {
+			entry.GeneratedVisibility = []string{ "//visibility:public" }
+		}
+		//TODO: users may want to be able to override the bazeldnf module name
+		existingLockFiles = append(existingLockFiles, entry)
+	}
+
+	return bazel.WriteModule(false, module, existingLockFiles, rpmtreeopts.modules, rpmtreeopts.name)
 }
 
 func updateLegacy(writeToMacro bool, install []*api.Package) error {
@@ -164,10 +195,6 @@ func updateLegacy(writeToMacro bool, install []*api.Package) error {
 }
 
 func loadBzlModLockFile() (*bazel.BzlModLockFile, error) {
-	if (!rpmtreeopts.bzlmod) {
-		return nil, nil
-	}
-
 	bzlModLockFile, err := bazel.LoadBzlModLockFile(rpmtreeopts.lockFile);
 
 	if err != nil {
@@ -207,6 +234,29 @@ func loadBzlModLockFile() (*bazel.BzlModLockFile, error) {
 	return bzlModLockFile, err
 }
 
+func validateBzlMod(required []string) error {
+	bzlModLockFile, err := loadBzlModLockFile()
+	if err != nil {
+		return err
+	}
+
+	sort.Slice(required, func(i, j int) bool {
+		return required[i] < required[j]
+	})
+	if (len(bzlModLockFile.Required) > 0 && ! reflect.DeepEqual(bzlModLockFile.Required, required)) {
+		return fmt.Errorf("required packages from lock file (%v) do not match command line (%v), lock file needs to be recreated", bzlModLockFile.Required, required)
+	}
+
+	module, err := bazel.LoadModule(rpmtreeopts.modules)
+	if err != nil {
+		return err
+	}
+
+	_ = bazel.GetRpmDepsProxy(module)
+
+	return nil
+}
+
 func implementation(cmd *cobra.Command, required []string) error {
 	// implementation for the rpmtree command
 
@@ -217,17 +267,10 @@ func implementation(cmd *cobra.Command, required []string) error {
 		return errors.New("you need to pass --lock-file if you are enabling --bzlmod")
 	}
 
-	bzlModLockFile, err := loadBzlModLockFile()
-	if err != nil {
-		return err
-	}
-
-	if (bzlModLockFile != nil) {
-		sort.Slice(required, func(i, j int) bool {
-			return required[i] < required[j]
-		})
-		if (len(bzlModLockFile.Required) > 0 && ! reflect.DeepEqual(bzlModLockFile.Required, required)) {
-			return fmt.Errorf("required packages from lock file (%v) do not match command line (%v), lock file needs to be recreated", bzlModLockFile.Required, required)
+	if (doBzlMod) {
+		err := validateBzlMod(required)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -244,7 +287,7 @@ func implementation(cmd *cobra.Command, required []string) error {
 
 	logrus.Info("Writing bazel files.")
 	if doBzlMod {
-		err = updateBzlMod(bzlModLockFile, install, required)
+		err = updateBzlMod(install, required)
 	} else {
 		err = updateLegacy(writeToMacro, install)
 	}
