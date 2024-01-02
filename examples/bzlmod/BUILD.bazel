@@ -1,0 +1,9 @@
+load("@bazeldnf//:def.bzl", "bazeldnf")
+load("@gazelle//:def.bzl", "gazelle")
+
+bazeldnf(
+    name = "bazeldnf",
+    use_prebuilt = False,
+)
+
+gazelle(name = "gazelle")
