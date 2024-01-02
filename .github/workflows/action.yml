@@ -13,12 +13,14 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: bazelbuild/setup-bazelisk@v1
-    - run: bazel build //... && \
-        bazel test //... && \
-        cd examples/bzlmod && \
-        bazel run @//:bazeldnf -- fetch --repofile repo-configs/*.yaml && \
-        bazel run :bazeldnf -- rpmtree --basesystem centos-release --repofile repo-configs/centos7.yaml --name centos7-rpm --bzlmod --lock-file rpmtree/centos7/rpm.json rpm && \
-        bazel run :bazeldnf -- rpmtree --basesystem centos-release --repofile repo-configs/centos7.yaml --name centos7-perl --bzlmod --lock-file rpmtree/centos7/perl.json perl && \
+    - run:
+        set -x &&
+        bazel build //... &&
+        bazel test //... &&
+        cd examples/bzlmod &&
+        bazel run @//:bazeldnf -- fetch --repofile repo-configs/*.yaml &&
+        bazel run :bazeldnf -- rpmtree --basesystem centos-release --repofile repo-configs/centos7.yaml --name centos7-rpm --bzlmod --lock-file rpmtree/centos7/rpm.json rpm &&
+        bazel run :bazeldnf -- rpmtree --basesystem centos-release --repofile repo-configs/centos7.yaml --name centos7-perl --bzlmod --lock-file rpmtree/centos7/perl.json perl &&
         bazel build @centos7-rpm//... @centos7-perl//... ...
 
   build-no-bzlmod:
