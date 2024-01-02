@@ -18,11 +18,11 @@ To generate a new lock file you would execute:
 bazel run :bazeldnf -- rpmtree \
     --basesystem centos-release \
     --repofile repo-configs/centos7.yaml \
-    --name centos7-rpm \
+    --name rpm \
     --bzlmod \
-    --lock-file rpmtree/centos7/rpm.json rpm
+    --lock-file rpmtree/rpm.json rpm
 ```
 
 In this example we're generating the lock file `rpmtree/centos7/rpm.json`
 containing the necessary rpms to get a CentOS7 `rpm` binary running and the
-generated rpmtree will be named `@centos7-rpm//:rpms`
+generated rpmtree will be named `@rpm//:rpms`

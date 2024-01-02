@@ -7,11 +7,3 @@ bazeldnf(
 )
 
 gazelle(name = "gazelle")
-
-load("@centos7-rpm//:rpms.bzl", "RPMS")
-load("@bazeldnf//:deps.bzl", "rpmtree")
-
-rpmtree(
-    name = "rpms",
-    rpms = RPMS
-)

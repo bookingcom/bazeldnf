@@ -20,7 +20,6 @@ use_repo(
     go_deps,
     "com_github_bazelbuild_buildtools",
     "com_github_crillab_gophersat",
-    "com_github_davecgh_go_spew",
     "com_github_onsi_gomega",
     "com_github_sassoftware_go_rpmutils",
     "com_github_sirupsen_logrus",
@@ -30,4 +29,11 @@ use_repo(
 )
 
 rpm_deps = use_extension("@bazeldnf//:extensions.bzl", "rpm_deps", dev_dependency = False)
-use_repo(rpm_deps)
+rpm_deps.lock_file(
+    generated_visibility = [
+        "//visibility:public",
+    ],
+    path = "rpmtree/rpm.json",
+    rpm_tree_name = "rpm",
+)
+use_repo(rpm_deps, "rpm")
