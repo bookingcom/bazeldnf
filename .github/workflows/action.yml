@@ -15,9 +15,11 @@ jobs:
     - uses: bazelbuild/setup-bazelisk@v1
     - run:
         set -x &&
+        echo "build --remote_header=x-buildbuddy-api-key=${{secrets.BUILDBUDDY_TOKEN}}" >> .bazelrc.user &&
         bazel build //... &&
         bazel test //... &&
         cd examples/bzlmod &&
+        echo "build --remote_header=x-buildbuddy-api-key=${{secrets.BUILDBUDDY_TOKEN}}" >> .bazelrc.user &&
         bazel run @//:bazeldnf -- fetch --repofile repo-configs/*.yaml &&
         bazel run :bazeldnf -- rpmtree --basesystem centos-release --repofile repo-configs/centos7.yaml --name centos7-rpm --bzlmod --lock-file rpmtree/centos7/rpm.json rpm &&
         bazel run :bazeldnf -- rpmtree --basesystem centos-release --repofile repo-configs/centos7.yaml --name centos7-perl --bzlmod --lock-file rpmtree/centos7/perl.json perl &&
