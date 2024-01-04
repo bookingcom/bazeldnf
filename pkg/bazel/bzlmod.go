@@ -46,6 +46,7 @@ type LockFileArgs struct {
 	Path string;
 	Bazeldnf string;
 	GeneratedVisibility []string;
+	ForceIgnoreWithDependencies []string;
 }
 
 func getStringValue(arg *build.AssignExpr) (string, bool) {
@@ -332,11 +333,12 @@ RepoFiles []string   `json:"repo-files"`
 Arch string          `json:"arch"`
 Required []string    `json:"required"`
 Version int          `json:"version"`
+ForceIgnoreWithDependencies []string `json:"force-ignore-with-dependencies"`
 
 Rpms []BzlModLockFileRPM `json:"rpms"`
 }
 
-const CURRENT_LOCK_FILE_VERSION = 1
+const CURRENT_LOCK_FILE_VERSION = 2
 
 func LoadBzlModLockFile(path string) (*BzlModLockFile, error) {
 	_, err := os.Stat(path)

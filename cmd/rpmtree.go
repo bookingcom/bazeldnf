@@ -208,6 +208,7 @@ func loadBzlModLockFile() (*bazel.BzlModLockFile, error) {
 			Name: rpmtreeopts.name,
 			BuildFile: rpmtreeopts.buildfile,
 			Arch: rpmtreeopts.arch,
+			ForceIgnoreWithDependencies: rpmtreeopts.forceIgnoreRegex,
 		}, nil
 	}
 
