@@ -9,24 +9,7 @@ local_path_override(
     path = "../../",
 )
 
-# because bazeldnf uses an replaced dependency on rpmutils we need to make
-# rules_go aware of it, also while building we need to push the rest of the
-# dependencies of bazeldnf otherwise we get a warning
 bazel_dep(name = "gazelle", version = "0.35.0")
-
-go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps")
-go_deps.from_file(go_mod = "@bazeldnf//:go.mod")
-use_repo(
-    go_deps,
-    "com_github_bazelbuild_buildtools",
-    "com_github_crillab_gophersat",
-    "com_github_onsi_gomega",
-    "com_github_sassoftware_go_rpmutils",
-    "com_github_sirupsen_logrus",
-    "com_github_spf13_cobra",
-    "io_k8s_sigs_yaml",
-    "org_golang_x_crypto",
-)
 
 rpm_deps = use_extension("@bazeldnf//:extensions.bzl", "rpm_deps", dev_dependency = False)
 rpm_deps.lock_file(
