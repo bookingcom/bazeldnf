@@ -1,6 +1,5 @@
 load("//:deps.bzl", _rpm_repository = "rpm")
 
-
 __BUILD_FILE_CONTENT__ = """
 load("@{repository_name}//:deps.bzl", "rpmtree")
 
@@ -25,16 +24,16 @@ def _rpm_repo_impl(repo_ctx):
     visibility = ", \n        ".join(['"%s"' % x for x in repo_ctx.attr.generated_visibility])
     for rpm in repo_ctx.attr.rpms:
         rpms.append('"%s"' % rpm)
-        alias = 'rpm_%s' % rpm.replace('-', '_').replace('@', '').split('//', 1)[0]
+        alias = "rpm_%s" % rpm.replace("-", "_").replace("@", "").split("//", 1)[0]
         list_of_rpm.append(
-            '"@{repo}//:{alias}"'.format(repo = repo_ctx.name.rsplit('~',1)[-1], alias = alias)
+            '"@{repo}//:{alias}"'.format(repo = repo_ctx.name.rsplit("~", 1)[-1], alias = alias),
         )
         rpm_aliases.append(
             'alias( name = "{alias}", actual = "{rpm}", visibility = [ {visibility}] )'.format(
                 alias = alias,
                 rpm = rpm,
-                visibility = visibility
-            )
+                visibility = visibility,
+            ),
         )
 
     rpms = ", \n        ".join(rpms)
@@ -82,20 +81,13 @@ def _handle_lock_file(module_ctx, lock_file, repositories):
     return lock_file.rpm_tree_name, module_ctx.is_dev_dependency(lock_file)
 
 def _rpm_deps_impl(module_ctx):
-    public_repos = []
-    is_dev_dependency = False
     repositories = dict()
 
     for module in module_ctx.modules:
-        if module.tags.lock_file:
-            for lock_file in module.tags.lock_file:
-                repo_name, _is_dev_dependency = _handle_lock_file(module_ctx, lock_file, repositories)
-                public_repos.append(repo_name)
-                is_dev_dependency = is_dev_dependency or _is_dev_dependency
+        for lock_file in module.tags.lock_file:
+            _handle_lock_file(module_ctx, lock_file, repositories)
 
         for rpm in module.tags.rpm:
-            is_dev_dependency = is_dev_dependency or module_ctx.is_dev_dependency(rpm)
-
             if rpm.name not in repositories:
                 _rpm_repository(
                     name = rpm.name,
@@ -105,15 +97,6 @@ def _rpm_deps_impl(module_ctx):
                     dependencies = rpm.dependencies,
                 )
                 repositories[rpm.name] = rpm
-            public_repos.append(rpm.name)
-
-    if not hasattr(module_ctx, "extension_metadata") or is_dev_dependency:
-        return None
-
-    return module_ctx.extension_metadata(
-        root_module_direct_deps = public_repos,
-        root_module_direct_dev_deps = [],
-    )
 
 _rpm_tag = tag_class(
     attrs = {

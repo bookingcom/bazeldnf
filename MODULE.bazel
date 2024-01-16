@@ -14,27 +14,26 @@ go_deps.from_file(go_mod = "//:go.mod")
 # override from go.mod, this is not supported by gazelle as of 0.35.0
 go_deps.archive_override(
     path = "github.com/sassoftware/go-rpmutils",
+    sha256 = "41953067dcc570723f21296728aec19b4967567db0f8a1323aed9633ce37eb9a",
+    strip_prefix = "go-rpmutils-5acf7436c00dee9caf9367340b35d8c52961d240",
     urls = [
         "https://github.com/rmohr/go-rpmutils/archive/5acf7436c00dee9caf9367340b35d8c52961d240.tar.gz",
     ],
-    strip_prefix = "go-rpmutils-5acf7436c00dee9caf9367340b35d8c52961d240",
-    sha256 = "41953067dcc570723f21296728aec19b4967567db0f8a1323aed9633ce37eb9a"
 )
 
 # dependencies from the override
 go_deps.module(
+    indirect = True,
     path = "github.com/DataDog/zstd",
-    version = "v1.4.5",
     sum = "h1:EndNeuB0l9syBZhut0wns3gV1hL8zX8LIu6ZiVHWLIQ=",
-    indirect = True
+    version = "v1.4.5",
 )
 go_deps.module(
+    indirect = True,
     path = "github.com/ulikunitz/xz",
-    version = "v0.5.9",
     sum = "h1:RsKRIA2MO8x56wkkcd3LbtcE/uMszhb6DpRf+3uwa3I=",
-    indirect = True
+    version = "v0.5.9",
 )
-
 use_repo(
     go_deps,
     "com_github_bazelbuild_buildtools",
