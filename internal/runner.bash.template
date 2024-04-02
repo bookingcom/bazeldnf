@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -eo pipefail
 
 BAZELDNF_SHORT_PATH=@@BAZELDNF_SHORT_PATH@@
 ARGS=@@ARGS@@
