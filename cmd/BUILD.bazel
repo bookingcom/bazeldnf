@@ -56,6 +56,6 @@ bazeldnf_toolchain(
 
 toolchain(
     name = "bazeldnf-host-toolchain",
-    toolchain_type = "//bazeldnf:toolchain",
     toolchain = ":host-toolchain",
+    toolchain_type = "//bazeldnf:toolchain_type",
 )
