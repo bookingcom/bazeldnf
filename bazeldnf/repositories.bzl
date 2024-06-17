@@ -6,8 +6,8 @@ See https://docs.bazel.build/versions/main/skylark/deploying.html#dependencies
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file", _http_archive = "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load("//bazeldnf/private:integrity.bzl", "INTEGRITY")
 load("//bazeldnf/private:toolchains_repo.bzl", "PLATFORMS", "toolchains_repo")
-load("//bazeldnf/private:versions.bzl", "TOOL_VERSIONS")
 
 def http_archive(name, **kwargs):
     maybe(_http_archive, name = name, **kwargs)
@@ -67,7 +67,7 @@ bazeldnf_repositories = repository_rule(
 )
 
 # Wrapper macro around everything above, this is the primary API
-def bazeldnf_register_toolchains(name, register = True, bazeldnf_version = "", **kwargs):
+def bazeldnf_register_toolchains(name, register = True, bazeldnf_version = "", repository = "rmohr/bazeldnf", **kwargs):
     """Convenience macro for users which does typical setup.
 
     - create a repository for each built-in platform like "bazeldnf_linux_amd64" -
@@ -78,24 +78,25 @@ def bazeldnf_register_toolchains(name, register = True, bazeldnf_version = "", *
     Users can avoid this macro and do these steps themselves, if they want more control.
     Args:
         name: base name for all created repos, like "bazeldnf1_14"
+        bazeldnf_version: version to use for bazeldnf
+        repository: path inside github to find the release artifacts
         register: whether to call through to native.register_toolchains.
             Should be True for WORKSPACE users, but false when used under bzlmod extension
-        bazeldnf_version: version for the prebuilt binaries
         **kwargs: passed to each node_repositories call
     """
     for platform in PLATFORMS.keys():
-        name_ = "prebuilt-%s-%s-%s" % (name, bazeldnf_version, platform)
-        fname = "bazeldnf-v{0}-{1}".format(
-            bazeldnf_version,
+        name_ = "prebuilt-%s-%s" % (name, platform)
+        fname = "bazeldnf-{1}".format(
             platform,
         )
-        url = "https://github.com/rmohr/bazeldnf/releases/download/v{0}/{1}".format(
-            bazeldnf_version,
-            fname,
+        url = "https://github.com/{repository}/releases/download/v{version}/{name}".format(
+            version = bazeldnf_version,
+            name = fname,
+            repository = repository
         )
         http_file(
             name = name_,
-            sha256 = TOOL_VERSIONS[bazeldnf_version][platform],
+            sha256 = INTEGRITY[platform],
             executable = True,
             url = url,
         )
