@@ -8,6 +8,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file", _http_archive 
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//bazeldnf/private:integrity.bzl", "INTEGRITY")
 load("//bazeldnf/private:toolchains_repo.bzl", "PLATFORMS", "toolchains_repo")
+load("//tools:version.bzl", "VERSION")
 
 def http_archive(name, **kwargs):
     maybe(_http_archive, name = name, **kwargs)
@@ -67,7 +68,7 @@ bazeldnf_repositories = repository_rule(
 )
 
 # Wrapper macro around everything above, this is the primary API
-def bazeldnf_register_toolchains(name, register = True, bazeldnf_version = "", repository = "rmohr/bazeldnf", **kwargs):
+def bazeldnf_register_toolchains(name, register = True, bazeldnf_version = VERSION, repository = "rmohr/bazeldnf", **kwargs):
     """Convenience macro for users which does typical setup.
 
     - create a repository for each built-in platform like "bazeldnf_linux_amd64" -
@@ -86,7 +87,7 @@ def bazeldnf_register_toolchains(name, register = True, bazeldnf_version = "", r
     """
     for platform in PLATFORMS.keys():
         name_ = "prebuilt-%s-%s" % (name, platform)
-        fname = "bazeldnf-{1}".format(
+        fname = "bazeldnf-{0}".format(
             platform,
         )
         url = "https://github.com/{repository}/releases/download/v{version}/{name}".format(

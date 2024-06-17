@@ -12,7 +12,9 @@ effectively overriding the default named toolchain due to toolchain resolution p
 based on: https://github.com/bazel-contrib/rules-template/blob/0dadcb716f06f672881681155fe6d9ff6fc4a4f4/mylang/extensions.bzl
 """
 
+load("//tools:version.bzl", "VERSION")
 load(":repositories.bzl", "bazeldnf_register_toolchains")
+
 
 _DEFAULT_NAME = "bazeldnf"
 
@@ -21,7 +23,7 @@ bazeldnf_toolchain = tag_class(attrs = {
 Base name for generated repositories, allowing more than one bazeldnf toolchain to be registered.
 Overriding the default is only permitted in the root module.
 """, default = _DEFAULT_NAME),
-    "bazeldnf_version": attr.string(doc = "Explicit version of bazeldnf.", mandatory = True),
+    "bazeldnf_version": attr.string(doc = "Explicit version of bazeldnf.", default = VERSION),
 })
 
 def _toolchain_extension(module_ctx):
