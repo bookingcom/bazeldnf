@@ -13,7 +13,6 @@ bazeldnf_dependencies()
 
 bazeldnf_register_toolchains(
     name = "bazeldnf_prebuilt",
-    bazeldnf_version = "0.5.9",
 )
 
 # dependencies for integration tests
