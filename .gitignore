@@ -6,3 +6,4 @@ repo.yaml
 dist
 cmd/cmd
 .bazelrc.user
+tools/release
