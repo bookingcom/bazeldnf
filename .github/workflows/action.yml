@@ -30,7 +30,6 @@ jobs:
         repository-cache: true
         bazelrc: |
           import %workspace%/.github/workflows/ci.bazelrc
-          common --config=built-toolchain
 
     - run: bazel build //... && bazel test //...
 

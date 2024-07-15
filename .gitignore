@@ -7,3 +7,8 @@ dist
 cmd/cmd
 .bazelrc.user
 tools/release
+artifacts
+bazeldnf-v*
+
+# ignore by now
+MODULE.bazel.lock

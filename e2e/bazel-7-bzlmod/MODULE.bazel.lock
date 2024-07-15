@@ -8,7 +8,8 @@
     "https://bcr.bazel.build/modules/apple_support/1.5.0/MODULE.bazel": "50341a62efbc483e8a2a6aec30994a58749bd7b885e18dd96aa8c33031e558ef",
     "https://bcr.bazel.build/modules/apple_support/1.5.0/source.json": "eb98a7627c0bc486b57f598ad8da50f6625d974c8f723e9ea71bd39f709c9862",
     "https://bcr.bazel.build/modules/bazel_features/1.11.0/MODULE.bazel": "f9382337dd5a474c3b7d334c2f83e50b6eaedc284253334cf823044a26de03e8",
-    "https://bcr.bazel.build/modules/bazel_features/1.11.0/source.json": "c9320aa53cd1c441d24bd6b716da087ad7e4ff0d9742a9884587596edfe53015",
+    "https://bcr.bazel.build/modules/bazel_features/1.13.0/MODULE.bazel": "c14c33c7c3c730612bdbe14ebbb5e61936b6f11322ea95a6e91cd1ba962f94df",
+    "https://bcr.bazel.build/modules/bazel_features/1.13.0/source.json": "b01f6aaaf93527ff4267421ef416debbd89b3166b70af5c89400c6a95a89c133",
     "https://bcr.bazel.build/modules/bazel_skylib/1.0.3/MODULE.bazel": "bcb0fd896384802d1ad283b4e4eb4d718eebd8cb820b0a2c3a347fb971afd9d8",
     "https://bcr.bazel.build/modules/bazel_skylib/1.2.0/MODULE.bazel": "44fe84260e454ed94ad326352a698422dbe372b21a1ac9f3eab76eb531223686",
     "https://bcr.bazel.build/modules/bazel_skylib/1.2.1/MODULE.bazel": "f35baf9da0efe45fa3da1696ae906eea3d615ad41e2e3def4aeb4e8bc0ef9a7a",
@@ -91,148 +92,6 @@
             "apple_support~",
             "bazel_tools",
             "bazel_tools"
-          ]
-        ]
-      }
-    },
-    "@@bazeldnf~//bazeldnf:extensions.bzl%bazeldnf": {
-      "general": {
-        "bzlTransitiveDigest": "LZdt4XllyCA9ms8TgTJGh7S4PPwrAXXsFyT1RDX1a2A=",
-        "usagesDigest": "U23uxGn0x59BoKWhvQoJ3teLzfxGEhedrfketKvCj8I=",
-        "recordedFileInputs": {},
-        "recordedDirentsInputs": {},
-        "envVariables": {},
-        "generatedRepoSpecs": {
-          "bazeldnf_darwin-amd64": {
-            "bzlFile": "@@bazeldnf~//bazeldnf:repositories.bzl",
-            "ruleClassName": "bazeldnf_repositories",
-            "attributes": {
-              "tool": "prebuilt-bazeldnf-darwin-amd64"
-            }
-          },
-          "bazeldnf_darwin-arm64": {
-            "bzlFile": "@@bazeldnf~//bazeldnf:repositories.bzl",
-            "ruleClassName": "bazeldnf_repositories",
-            "attributes": {
-              "tool": "prebuilt-bazeldnf-darwin-arm64"
-            }
-          },
-          "prebuilt-bazeldnf-linux-ppc64le": {
-            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
-            "ruleClassName": "http_file",
-            "attributes": {
-              "sha256": "7ea4db00947914bc1c51e8f042fe220a3167c65815c487eccd0c541ecfa78aa1",
-              "executable": true,
-              "url": "https://github.com/rmohr/bazeldnf/releases/download/v0.5.9/bazeldnf-v0.5.9-linux-ppc64le"
-            }
-          },
-          "prebuilt-bazeldnf-linux-arm64": {
-            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
-            "ruleClassName": "http_file",
-            "attributes": {
-              "sha256": "d954b785bfd79dbbd66a2f3df02b0d3a51f1fed4508a6d88fda13a9d24c878cc",
-              "executable": true,
-              "url": "https://github.com/rmohr/bazeldnf/releases/download/v0.5.9/bazeldnf-v0.5.9-linux-arm64"
-            }
-          },
-          "prebuilt-bazeldnf-linux-s390x": {
-            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
-            "ruleClassName": "http_file",
-            "attributes": {
-              "sha256": "09aa4abcb1d85da11642889826b982ef90547eb32099fc8177456c92f66a4cfd",
-              "executable": true,
-              "url": "https://github.com/rmohr/bazeldnf/releases/download/v0.5.9/bazeldnf-v0.5.9-linux-s390x"
-            }
-          },
-          "bazeldnf_linux-s390x": {
-            "bzlFile": "@@bazeldnf~//bazeldnf:repositories.bzl",
-            "ruleClassName": "bazeldnf_repositories",
-            "attributes": {
-              "tool": "prebuilt-bazeldnf-linux-s390x"
-            }
-          },
-          "bazeldnf_linux-ppc64le": {
-            "bzlFile": "@@bazeldnf~//bazeldnf:repositories.bzl",
-            "ruleClassName": "bazeldnf_repositories",
-            "attributes": {
-              "tool": "prebuilt-bazeldnf-linux-ppc64le"
-            }
-          },
-          "prebuilt-bazeldnf-darwin-amd64": {
-            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
-            "ruleClassName": "http_file",
-            "attributes": {
-              "sha256": "92afc7f6475981adf9ae32b563b051869d433d8d8c9666e28a1c1c6e840394cd",
-              "executable": true,
-              "url": "https://github.com/rmohr/bazeldnf/releases/download/v0.5.9/bazeldnf-v0.5.9-darwin-amd64"
-            }
-          },
-          "bazeldnf_linux-arm64": {
-            "bzlFile": "@@bazeldnf~//bazeldnf:repositories.bzl",
-            "ruleClassName": "bazeldnf_repositories",
-            "attributes": {
-              "tool": "prebuilt-bazeldnf-linux-arm64"
-            }
-          },
-          "prebuilt-bazeldnf-linux-amd64": {
-            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
-            "ruleClassName": "http_file",
-            "attributes": {
-              "sha256": "7e1035d8bd2f25b787b04843f4d6a05e7cdbd3995926497c2a587e52da6262a8",
-              "executable": true,
-              "url": "https://github.com/rmohr/bazeldnf/releases/download/v0.5.9/bazeldnf-v0.5.9-linux-amd64"
-            }
-          },
-          "prebuilt-bazeldnf-linux-ppc64": {
-            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
-            "ruleClassName": "http_file",
-            "attributes": {
-              "sha256": "9d5337c1afe4bab858742718ac4c230d9ca368299cb97c50078eef14ae180922",
-              "executable": true,
-              "url": "https://github.com/rmohr/bazeldnf/releases/download/v0.5.9/bazeldnf-v0.5.9-linux-ppc64"
-            }
-          },
-          "bazeldnf_linux-ppc64": {
-            "bzlFile": "@@bazeldnf~//bazeldnf:repositories.bzl",
-            "ruleClassName": "bazeldnf_repositories",
-            "attributes": {
-              "tool": "prebuilt-bazeldnf-linux-ppc64"
-            }
-          },
-          "bazeldnf_toolchains": {
-            "bzlFile": "@@bazeldnf~//bazeldnf/private:toolchains_repo.bzl",
-            "ruleClassName": "toolchains_repo",
-            "attributes": {
-              "user_repository_name": "bazeldnf"
-            }
-          },
-          "prebuilt-bazeldnf-darwin-arm64": {
-            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
-            "ruleClassName": "http_file",
-            "attributes": {
-              "sha256": "c5e99ed72448026ee63259a0a28440f8b43a125414fa312edbd569c2976515a3",
-              "executable": true,
-              "url": "https://github.com/rmohr/bazeldnf/releases/download/v0.5.9/bazeldnf-v0.5.9-darwin-arm64"
-            }
-          },
-          "bazeldnf_linux-amd64": {
-            "bzlFile": "@@bazeldnf~//bazeldnf:repositories.bzl",
-            "ruleClassName": "bazeldnf_repositories",
-            "attributes": {
-              "tool": "prebuilt-bazeldnf-linux-amd64"
-            }
-          }
-        },
-        "recordedRepoMappingEntries": [
-          [
-            "bazeldnf~",
-            "bazel_tools",
-            "bazel_tools"
-          ],
-          [
-            "bazeldnf~",
-            "bazeldnf",
-            "bazeldnf~"
           ]
         ]
       }
