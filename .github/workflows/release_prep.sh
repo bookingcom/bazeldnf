@@ -37,7 +37,7 @@ PREBUILTS=$(jq \
 cat >${PREFIX}/tools/integrity.bzl <<EOF
 "Generated during release by release_prep.sh, using integrity.jq"
 
-PREBUILTS = "${PREBUILTS}"
+PREBUILTS = ${PREBUILTS}
 
 EOF
 
