@@ -90,6 +90,9 @@ def bazeldnf_register_toolchains(name, register = True, **kwargs):
             VERSION,
             platform,
         )
+        if fname not in INTEGRITY:
+            print("WARNING: integrity checksum for {0} not found in INTEGRITY".format(fname))  # buildifier: disable=print
+            continue
         url = "https://github.com/{repo_url}/releases/download/{version}/{file_name}".format(
             file_name = fname,
             repo_url = REPO_URL,
