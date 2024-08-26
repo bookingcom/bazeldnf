@@ -97,7 +97,7 @@ def bazeldnf_register_toolchains(name, register = True, **kwargs):
         )
         http_file(
             name = name_,
-            sha256 = INTEGRITY[platform],
+            sha256 = INTEGRITY[fname],
             executable = True,
             url = url,
         )
