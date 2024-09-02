@@ -28,6 +28,7 @@ func Execute() {
 	rootCmd.AddCommand(NewTar2FilesCmd())
 	rootCmd.AddCommand(NewLddCmd())
 	rootCmd.AddCommand(NewVerifyCmd())
+	rootCmd.AddCommand(NewBazelmodCmd())
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
