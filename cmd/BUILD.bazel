@@ -5,6 +5,7 @@ go_library(
     name = "cmd_lib",
     srcs = [
         "bazeldnf.go",
+        "bzlmod.go",
         "fetch.go",
         "filter.go",
         "init.go",
