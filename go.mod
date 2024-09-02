@@ -3,6 +3,7 @@ module github.com/rmohr/bazeldnf
 go 1.19
 
 require (
+	github.com/adrg/xdg v0.5.0
 	github.com/bazelbuild/buildtools v0.0.0-20240823132350-3488089d3661
 	github.com/crillab/gophersat v1.3.1
 	github.com/onsi/gomega v1.26.0
@@ -21,7 +22,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	golang.org/x/net v0.5.0 // indirect
-	golang.org/x/sys v0.4.0 // indirect
+	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/text v0.6.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
