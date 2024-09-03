@@ -36,26 +36,28 @@ _DEFAULT_NAME = "bazeldnf"
 def _handle_lock_file(lock_file, module_ctx):
     content = module_ctx.read(lock_file)
     lock_file_json = json.decode(content)
-    name = lock_file_json.get("name", lock_file.name.rsplit(".json", 1)[0])
+    repo_name = lock_file_json.get("name", lock_file.name.rsplit(".json", 1)[0])
 
     rpms = []
 
-    for rpm in lock_file_json.get("rpms", []):
-        rpm_name = rpm.pop("name", None)
-        if not rpm_name:
-            urls = rpm.get("urls", [])
-            if len(urls) < 1:
-                fail("invalid entry in %s for %s" % (lock_file, rpm_name))
-            rpm_name = urls[0].rsplit("/", 1)[-1]
-        rpm_repository(name = rpm_name, **rpm)
-        rpms.append(rpm_name)
+    for rpm in lock_file_json.get("packages", []):
+        dependencies = rpm.pop("dependencies", [])
+        dependencies = [x.replace("+", "pp") for x in dependencies]
+        dependencies = ["@%s//rpm" % (x) for x in dependencies]
+        name = rpm.pop("name").replace("+", "pp")
+        rpm_repository(
+            name = name,
+            dependencies = dependencies,
+            **rpm
+        )
+        rpms.append(name)
 
     _alias_repository(
-        name = name,
+        name = repo_name,
         rpms = ["@@%s//rpm" % x for x in rpms],
     )
 
-    return name
+    return repo_name
 
 def _toolchain_extension(module_ctx):
     repos = []
