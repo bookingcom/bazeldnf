@@ -6,3 +6,5 @@ bzl_library(
     visibility = ["//bazeldnf:__subpackages__"],
     deps = ["//bazeldnf:platforms"],
 )
+
+exports_files(["update-lock-file.sh"])

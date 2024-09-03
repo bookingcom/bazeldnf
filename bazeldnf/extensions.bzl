@@ -72,9 +72,27 @@ alias(
 )
 """
 
+_ALIAS_REPO_TOP_LEVEL_TEMPLATE = """\
+load("@bazeldnf//bazeldnf/private:lock-file-helpers.bzl", "update_lock_file")
+
+update_lock_file(
+    name = "update_lock_file",
+    lock_file = "{path}",
+)
+"""
+
 def _alias_repository_impl(repository_ctx):
     """Creates a repository that aliases other repositories."""
     repository_ctx.file("WORKSPACE", "")
+    lock_file_path = repository_ctx.attr.lock_file.name
+    if repository_ctx.attr.lock_file.package:
+        lock_file_path = repository_ctx.attr.lock_file.package + "/" + lock_file_path
+    repository_ctx.file(
+        "BUILD.bazel",
+        _ALIAS_REPO_TOP_LEVEL_TEMPLATE.format(
+            path = lock_file_path,
+        ),
+    )
     for rpm in repository_ctx.attr.rpms:
         repo_name = rpm.repo_name
         repository_ctx.file("%s/BUILD.bazel" % repo_name, _ALIAS_TEMPLATE.format(name = repo_name))
@@ -83,6 +101,7 @@ _alias_repository = repository_rule(
     implementation = _alias_repository_impl,
     attrs = {
         "rpms": attr.label_list(),
+        "lock_file": attr.label(),
     },
 )
 
@@ -108,6 +127,7 @@ def _handle_lock_file(lock_file, module_ctx):
     _alias_repository(
         name = repo_name,
         rpms = ["@@%s//rpm" % x for x in rpms],
+        lock_file = lock_file,
     )
 
     return repo_name
