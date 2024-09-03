@@ -40,6 +40,6 @@ sh_binary(
     srcs = ["run-wrapper.sh"],
     data = [":bazeldnf"],
     env = {
-        "BAZELDNF_PATH": "$(location :bazeldnf)"
-    }
+        "BAZELDNF_PATH": "$(location :bazeldnf)",
+    },
 )

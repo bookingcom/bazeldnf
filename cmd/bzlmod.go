@@ -107,13 +107,17 @@ func computeDependencies(requires []string, providers map[string]string, ignored
 	deps := make(map[string]bool)
 	for _, req := range requires {
 		if ignored[req] {
+			logrus.Debugf("Ignoring dependency %s", req)
 			continue
 		}
+		logrus.Debugf("Resolving dependency %s", req)
 		provider, ok := providers[req]
 		if !ok {
 			return nil, fmt.Errorf("could not find provider for %s", req)
 		}
+		logrus.Debugf("Found provider %s for %s", provider, req)
 		if ignored[provider] {
+			logrus.Debugf("Ignoring provider %s for %s", provider, req)
 			continue
 		}
 		deps[provider] = true
