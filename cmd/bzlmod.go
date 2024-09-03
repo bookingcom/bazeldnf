@@ -44,7 +44,7 @@ func NewBzlmodCmd() *cobra.Command {
 	bzlmodCmd.Flags().StringVarP(&bzlmodopts.arch, "arch", "a", "x86_64", "target architecture")
 	bzlmodCmd.Flags().BoolVarP(&bzlmodopts.nobest, "nobest", "n", false, "allow picking versions which are not the newest")
 	bzlmodCmd.Flags().StringVarP(&bzlmodopts.out, "output", "o", "bazeldnf-lock.json", "where to write the resolved dependency tree")
-	bzlmodCmd.Flags().StringArrayVar(&bzlmodopts.forceIgnoreRegex, "force-ignore-with-dependencies", []string{}, "Packages matching these regex patterns will not be installed. Allows force-removing unwanted dependencies. Be careful, this can lead to hidden missing dependencies.")
+	bzlmodCmd.Flags().StringArrayVarP(&bzlmodopts.forceIgnoreRegex, "force-ignore-with-dependencies", "i", []string{}, "Packages matching these regex patterns will not be installed. Allows force-removing unwanted dependencies. Be careful, this can lead to hidden missing dependencies.")
 	bzlmodCmd.Flags().StringArrayVarP(&bzlmodopts.repoFiles, "repofile", "r", []string{"repo.yaml"}, "repository information file. Can be specified multiple times. Will be used by default if no explicit inputs are provided.")
 	bzlmodCmd.Flags().StringArrayVarP(&bzlmodopts.targets, "targets", "t", []string{}, "target RPMs to add to lock file")
 	err := bzlmodCmd.MarkFlagRequired("targets")
@@ -69,10 +69,16 @@ type InstalledPackage struct {
 	Dependencies []string `json:"dependencies"`
 }
 
+func (i *InstalledPackage) setDependencies(pkgs []string) {
+	i.Dependencies = make([]string, 0, len(pkgs))
+	i.Dependencies = append(i.Dependencies, pkgs...)
+}
+
 type BzlmodLockFile struct {
-	Packages     []InstalledPackage `json:"packages"`
-	Targets      []string           `json:"targets"`
-	ForceIgnored []string           `json:"ignored"`
+	CommandLineArguments []string           `json:"cli-arguments"`
+	Packages             []InstalledPackage `json:"packages"`
+	Targets              []string           `json:"targets"`
+	ForceIgnored         []string           `json:"ignored"`
 }
 
 func keys[K cmp.Ordered, V any](m map[K]V) []K {
@@ -100,13 +106,17 @@ func computeUrls(pkg *api.Package) ([]string, error) {
 func computeDependencies(requires []string, providers map[string]string, ignored map[string]bool) ([]string, error) {
 	deps := make(map[string]bool)
 	for _, req := range requires {
-		if provider, ok := providers[req]; ok {
-			deps[provider] = true
-		} else if ignored[req] {
+		if ignored[req] {
 			continue
-		} else {
+		}
+		provider, ok := providers[req]
+		if !ok {
 			return nil, fmt.Errorf("could not find provider for %s", req)
 		}
+		if ignored[provider] {
+			continue
+		}
+		deps[provider] = true
 	}
 	return keys(deps), nil
 }
@@ -167,6 +177,14 @@ func (opts *BzlmodOpts) RunE(cmd *cobra.Command, args []string) error {
 	for _, result := range results {
 		for _, forceIgnoredPackage := range result.ForceIgnored {
 			forceIgnored[forceIgnoredPackage.Name] = true
+
+			for _, entry := range forceIgnoredPackage.Format.Provides.Entries {
+				providers[entry.Name] = forceIgnoredPackage.Name
+			}
+
+			for _, entry := range forceIgnoredPackage.Format.Files {
+				providers[entry.Text] = forceIgnoredPackage.Name
+			}
 		}
 
 		for _, installPackage := range result.Install {
@@ -208,9 +226,9 @@ func (opts *BzlmodOpts) RunE(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		pkg := allPackages[name]
-		pkg.Dependencies = deps
-		allPackages[name] = pkg
+		entry := allPackages[name]
+		entry.setDependencies(deps)
+		allPackages[name] = entry
 	}
 
 	sortedPackages := make([]InstalledPackage, 0, len(packageNames))
@@ -219,7 +237,8 @@ func (opts *BzlmodOpts) RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	lockFile := BzlmodLockFile{
-		ForceIgnored: keys[string](forceIgnored),
+		CommandLineArguments: os.Args[2:],
+		ForceIgnored: keys(forceIgnored),
 		Packages:     sortedPackages,
 		Targets:      opts.targets,
 	}
@@ -229,6 +248,8 @@ func (opts *BzlmodOpts) RunE(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	logrus.Info("Writing lock file.")
 
 	return os.WriteFile(opts.out, data, 0644)
 }
