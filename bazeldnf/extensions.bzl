@@ -117,9 +117,16 @@ def _handle_lock_file(lock_file, module_ctx):
         dependencies = [x.replace("+", "pp") for x in dependencies]
         dependencies = ["@%s//rpm" % (x) for x in dependencies]
         name = rpm.pop("name").replace("+", "pp")
+        repository = rpm.pop("repository")
+        mirrors = lock_file_json.get("repositories", {}).get(repository, None)
+        if mirrors == None:
+            fail("couldn't resolve %s in %s" % (repository, lock_file_json["repositories"]))
+        href = rpm.pop("href")
+        urls = ["%s/%s" % (x, href) for x in mirrors]
         rpm_repository(
             name = name,
             dependencies = dependencies,
+            urls = urls,
             **rpm
         )
         rpms.append(name)

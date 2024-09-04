@@ -4,12 +4,12 @@ import (
 	"cmp"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"os"
 
 	"slices"
 
 	"github.com/rmohr/bazeldnf/pkg/api"
+	"github.com/rmohr/bazeldnf/pkg/api/bazeldnf"
 	"github.com/rmohr/bazeldnf/pkg/reducer"
 	"github.com/rmohr/bazeldnf/pkg/repo"
 	"github.com/rmohr/bazeldnf/pkg/sat"
@@ -65,7 +65,8 @@ type resolvedResult struct {
 type InstalledPackage struct {
 	Name         string   `json:"name"`
 	Sha256       string   `json:"sha256"`
-	Urls         []string `json:"urls"`
+	Href         string   `json:"href"`
+	Repository   string   `json:"repository"`
 	Dependencies []string `json:"dependencies"`
 }
 
@@ -75,10 +76,11 @@ func (i *InstalledPackage) setDependencies(pkgs []string) {
 }
 
 type BzlmodLockFile struct {
-	CommandLineArguments []string           `json:"cli-arguments"`
-	Packages             []InstalledPackage `json:"packages"`
-	Targets              []string           `json:"targets"`
-	ForceIgnored         []string           `json:"ignored"`
+	CommandLineArguments []string            `json:"cli-arguments"`
+	Repositories         map[string][]string `json:"repositories"`
+	Packages             []InstalledPackage  `json:"packages"`
+	Targets              []string            `json:"targets"`
+	ForceIgnored         []string            `json:"ignored"`
 }
 
 func keys[K cmp.Ordered, V any](m map[K]V) []K {
@@ -88,19 +90,6 @@ func keys[K cmp.Ordered, V any](m map[K]V) []K {
 	}
 	slices.Sort(keys)
 	return keys
-}
-
-func computeUrls(pkg *api.Package) ([]string, error) {
-	urls := make([]string, 0, len(pkg.Repository.Mirrors))
-	for _, mirror := range pkg.Repository.Mirrors {
-		u, err := url.Parse(mirror)
-		if err != nil {
-			return nil, err
-		}
-		u = u.JoinPath(pkg.Location.Href)
-		urls = append(urls, u.String())
-	}
-	return urls, nil
 }
 
 func computeDependencies(requires []string, providers map[string]string, ignored map[string]bool) ([]string, error) {
@@ -178,6 +167,8 @@ func (opts *BzlmodOpts) RunE(cmd *cobra.Command, args []string) error {
 	forceIgnored := make(map[string]bool)
 	allPackages := make(map[string]InstalledPackage)
 	providers := make(map[string]string)
+	repositories := make(map[string]*bazeldnf.Repository)
+
 	for _, result := range results {
 		for _, forceIgnoredPackage := range result.ForceIgnored {
 			forceIgnored[forceIgnoredPackage.Name] = true
@@ -207,8 +198,7 @@ func (opts *BzlmodOpts) RunE(cmd *cobra.Command, args []string) error {
 			}
 
 			slices.Sort(deps)
-
-			urls, err := computeUrls(installPackage)
+			repositories[installPackage.Repository.Name] = installPackage.Repository
 
 			if err != nil {
 				return err
@@ -217,7 +207,8 @@ func (opts *BzlmodOpts) RunE(cmd *cobra.Command, args []string) error {
 			allPackages[installPackage.Name] = InstalledPackage{
 				Name:         installPackage.Name,
 				Sha256:       installPackage.Checksum.Text,
-				Urls:         urls,
+				Href:         installPackage.Location.Href,
+				Repository:   installPackage.Repository.Name,
 				Dependencies: deps,
 			}
 		}
@@ -242,9 +233,14 @@ func (opts *BzlmodOpts) RunE(cmd *cobra.Command, args []string) error {
 
 	lockFile := BzlmodLockFile{
 		CommandLineArguments: os.Args[2:],
-		ForceIgnored: keys(forceIgnored),
-		Packages:     sortedPackages,
-		Targets:      opts.targets,
+		ForceIgnored:         keys(forceIgnored),
+		Packages:             sortedPackages,
+		Targets:              opts.targets,
+		Repositories:         make(map[string][]string),
+	}
+
+	for mirrorName, repository := range repositories {
+		lockFile.Repositories[mirrorName] = repository.Mirrors
 	}
 
 	data, err := json.MarshalIndent(lockFile, "", "\t")
