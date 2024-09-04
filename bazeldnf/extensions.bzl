@@ -205,20 +205,7 @@ per rpm entry in this invocation of the bazel extension.
 Label of the JSON file that contains the RPMs to expose, there's no legacy mode \
 for RPMs defined by a lock file.
 
-The lock file content is as:
-```json
-    {
-        "name": "optional name for the proxy repository, defaults to the file name",
-        "rpms": [
-            {
-                "name": "<name of the rpm>",
-                "urls": ["<url0>", ...],
-                "sha256": "<sha256 of the file>",
-                "integrity": "<integrity of the file>"
-            }
-        ]
-    }
-```
+The lock file content is as: TBD
 """,
             allow_single_file = [".json"],
         ),
