@@ -8,3 +8,13 @@ bzl_library(
 )
 
 exports_files(["update-lock-file.sh"])
+
+bzl_library(
+    name = "lock-file-helpers",
+    srcs = ["lock-file-helpers.bzl"],
+    visibility = ["//bazeldnf:__subpackages__"],
+    deps = [
+        "//bazeldnf:toolchain_lib",
+        "@bazel_skylib//lib:shell",
+    ],
+)
