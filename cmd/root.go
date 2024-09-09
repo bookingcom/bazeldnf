@@ -17,7 +17,7 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
-	if logLevel, hasIt := os.LookupEnv("LOG_LEVEL") ; hasIt {
+	if logLevel, hasIt := os.LookupEnv("LOG_LEVEL"); hasIt {
 		level, err := logrus.ParseLevel(logLevel)
 		if err != nil {
 			fmt.Println("Unable to parse log level from environment variable LOG_LEVEL")

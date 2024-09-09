@@ -22,16 +22,16 @@ type cacheHelperOpts struct {
 	cacheDir string
 }
 
-var cacheHelperValues = cacheHelperOpts{};
+var cacheHelperValues = cacheHelperOpts{}
 
 type CacheHelper struct {
 	cacheDir string
 }
 
-func NewCacheHelper(cacheDir ...string) (*CacheHelper) {
-	if (len(cacheDir) == 0) {
-		cacheDir = append(cacheDir, cacheHelperValues.cacheDir);
-	} else if (len(cacheDir) > 1) {
+func NewCacheHelper(cacheDir ...string) *CacheHelper {
+	if len(cacheDir) == 0 {
+		cacheDir = append(cacheDir, cacheHelperValues.cacheDir)
+	} else if len(cacheDir) > 1 {
 		panic("too many cache directories")
 	}
 
@@ -39,11 +39,11 @@ func NewCacheHelper(cacheDir ...string) (*CacheHelper) {
 
 	return &CacheHelper{
 		cacheDir: cacheDir[0],
-	};
+	}
 }
 
 func AddCacheHelperFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&cacheHelperValues.cacheDir, "cache-dir", "c", xdg.CacheHome + "/bazeldnf", "Cache directory");
+	cmd.Flags().StringVarP(&cacheHelperValues.cacheDir, "cache-dir", "c", xdg.CacheHome+"/bazeldnf", "Cache directory")
 }
 
 func (r *CacheHelper) LoadMetaLink(repo *bazeldnf.Repository) (*api.Metalink, error) {

@@ -14,7 +14,7 @@ bzl_library(
     srcs = ["lock-file-helpers.bzl"],
     visibility = ["//bazeldnf:__subpackages__"],
     deps = [
-        "//bazeldnf:toolchain_lib",
+        "//bazeldnf:toolchain",
         "@bazel_skylib//lib:shell",
     ],
 )

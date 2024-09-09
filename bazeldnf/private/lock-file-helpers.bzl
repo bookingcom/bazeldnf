@@ -13,7 +13,17 @@ def _update_lock_file_impl(ctx):
         "@@BAZELDNF_SHORT_PATH@@": shell.quote(bazeldnf._tool.short_path),
         "@@JQ_SHORT_PATH@@": shell.quote(jq.short_path),
         "@@LOCK_FILE@@": shell.quote(ctx.attr.lock_file),
+        "@@BZLMOD_ARGS@@": "",
     }
+
+    bzlmod_args = []
+    for exclude in ctx.attr.excludes:
+        bzlmod_args.extend(["-i", shell.quote(exclude)])
+    if ctx.attr.rpms:
+        bzlmod_args.extend(ctx.attr.rpms)
+    if bzlmod_args:
+        bzlmod_args = ["-r", ctx.attr.repofile, "-o", ctx.attr.lock_file] + bzlmod_args
+        substitutions["@@BZLMOD_ARGS@@"] = " ".join(bzlmod_args)
 
     ctx.actions.expand_template(
         template = ctx.file._runner,
@@ -36,6 +46,9 @@ update_lock_file = rule(
     implementation = _update_lock_file_impl,
     attrs = {
         "lock_file": attr.string(),
+        "rpms": attr.string_list(),
+        "excludes": attr.string_list(),
+        "repofile": attr.string(),
         "_runner": attr.label(allow_single_file = True, default = Label("//bazeldnf/private:update-lock-file.sh")),
     },
     toolchains = [
