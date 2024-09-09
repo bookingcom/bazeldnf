@@ -21,49 +21,93 @@ _ALIAS_REPO_TOP_LEVEL_TEMPLATE = """\
 load("@bazeldnf//bazeldnf/private:lock-file-helpers.bzl", "update_lock_file")
 
 update_lock_file(
-    name = "update_lock_file",
+    name = "update-lock-file",
     lock_file = "{path}",
+    rpms = [{rpms}],
+    excludes = [{excludes}],
+    repofile = "{repofile}",
 )
+"""
+
+_UPDATE_LOCK_FILE_TEMPLATE = """\
+fail("Lock file hasn't been generated for this repository, please run `bazel run @{repo}//:update-lock-file` first")
 """
 
 def _alias_repository_impl(repository_ctx):
     """Creates a repository that aliases other repositories."""
     repository_ctx.file("WORKSPACE", "")
     lock_file_path = repository_ctx.attr.lock_file.name
+
+    repofile = repository_ctx.attr.repofile.name if repository_ctx.attr.repofile else "invalid-repo.yaml"
+
     if repository_ctx.attr.lock_file.package:
         lock_file_path = repository_ctx.attr.lock_file.package + "/" + lock_file_path
+        repofile = repository_ctx.attr.repofile.package + "/" + repofile
+
     repository_ctx.file(
         "BUILD.bazel",
         _ALIAS_REPO_TOP_LEVEL_TEMPLATE.format(
             path = lock_file_path,
+            rpms = ", ".join(["'{}'".format(x) for x in repository_ctx.attr.rpms_to_install]),
+            excludes = ", ".join(["'{}'".format(x) for x in repository_ctx.attr.excludes]),
+            repofile = repofile,
         ),
     )
     for rpm in repository_ctx.attr.rpms:
         repo_name = rpm.repo_name
         repository_ctx.file("%s/BUILD.bazel" % repo_name, _ALIAS_TEMPLATE.format(name = repo_name))
+    if not repository_ctx.attr.rpms:
+        for rpm in repository_ctx.attr.rpms_to_install:
+            repository_ctx.file(
+                "%s/BUILD.bazel" % rpm,
+                _UPDATE_LOCK_FILE_TEMPLATE.format(repo = repository_ctx.name.rsplit("~", 1)[-1]),
+            )
 
 _alias_repository = repository_rule(
     implementation = _alias_repository_impl,
     attrs = {
-        "rpms": attr.label_list(),
+        "rpms": attr.label_list(default = []),
         "lock_file": attr.label(),
+        "rpms_to_install": attr.string_list(),
+        "excludes": attr.string_list(),
+        "repofile": attr.label(),
     },
 )
 
 _DEFAULT_NAME = "bazeldnf"
 
-def _handle_lock_file(lock_file, module_ctx):
-    content = module_ctx.read(lock_file)
+def _handle_lock_file(config, module_ctx, registered_rpms = {}):
+    if not config.lock_file:
+        fail("No lock file provided for %s" % config.name)
+
+    repository_args = {
+        "name": config.name,
+        "lock_file": config.lock_file,
+        "rpms_to_install": config.rpms,
+        "excludes": config.excludes,
+        "repofile": config.repofile,
+    }
+
+    if not module_ctx.path(config.lock_file).exists:
+        _alias_repository(
+            **repository_args
+        )
+        return config.name
+
+    content = module_ctx.read(config.lock_file)
     lock_file_json = json.decode(content)
-    repo_name = lock_file_json.get("name", lock_file.name.rsplit(".json", 1)[0])
 
     rpms = []
 
     for rpm in lock_file_json.get("packages", []):
         dependencies = rpm.pop("dependencies", [])
         dependencies = [x.replace("+", "pp") for x in dependencies]
-        dependencies = ["@%s//rpm" % (x) for x in dependencies]
+        dependencies = ["@{}{}//rpm".format(config.rpm_repository_prefix, x) for x in dependencies]
         name = rpm.pop("name").replace("+", "pp")
+        name = "{}{}".format(config.rpm_repository_prefix, name)
+        if name in registered_rpms:
+            continue
+        registered_rpms[name] = 1
         repository = rpm.pop("repository")
         mirrors = lock_file_json.get("repositories", {}).get(repository, None)
         if mirrors == None:
@@ -78,13 +122,13 @@ def _handle_lock_file(lock_file, module_ctx):
         )
         rpms.append(name)
 
+    repository_args["rpms"] = ["@@%s//rpm" % x for x in rpms]
+
     _alias_repository(
-        name = repo_name,
-        rpms = ["@@%s//rpm" % x for x in rpms],
-        lock_file = lock_file,
+        **repository_args
     )
 
-    return repo_name
+    return config.name
 
 def _toolchain_extension(module_ctx):
     repos = []
@@ -107,12 +151,15 @@ def _toolchain_extension(module_ctx):
 
         legacy = True
         name = "bazeldnf_rpms"
+        registered_rpms = dict()
         for config in mod.tags.config:
-            if not config.legacy_mode:
-                legacy = False
-                name = config.name or name
-            if config.lock_file:
-                repos.append(_handle_lock_file(config.lock_file, module_ctx))
+            repos.append(
+                _handle_lock_file(
+                    config,
+                    module_ctx,
+                    registered_rpms,
+                ),
+            )
 
         rpms = []
 
@@ -189,13 +236,6 @@ It is optional to make development easier but either this attribute or
 
 _config_tag = tag_class(
     attrs = {
-        "legacy_mode": attr.bool(
-            default = True,
-            doc = """\
-If true, the module is loaded in legacy mode and exposes one Bazel repository \
-per rpm entry in this invocation of the bazel extension.
-""",
-        ),
         "name": attr.string(
             doc = "Name of the generated proxy repository",
             default = "bazeldnf_rpms",
@@ -208,6 +248,20 @@ for RPMs defined by a lock file.
 The lock file content is as: TBD
 """,
             allow_single_file = [".json"],
+        ),
+        "rpm_repository_prefix": attr.string(
+            doc = "A prefix to add to all generated rpm repositories",
+            default = "",
+        ),
+        "repofile": attr.label(
+            doc = "YAML file that defines the repositories used for this lock file",
+            allow_single_file = [".yaml"],
+        ),
+        "rpms": attr.string_list(
+            doc = "name of the RPMs to install",
+        ),
+        "excludes": attr.string_list(
+            doc = "Regex to pass to bazeldnf to exclude from the dependency tree",
         ),
     },
 )
