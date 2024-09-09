@@ -25,6 +25,10 @@ func (r *RepoReducer) Load() error {
 	return nil
 }
 
+func (r *RepoReducer) PackageCount() int {
+	return len(r.packages)
+}
+
 func (r *RepoReducer) Resolve(packages []string, ignoreMissing bool) (matched []string, involved []*api.Package, err error) {
 	packages = append(packages, r.implicitRequires...)
 	discovered := map[string]*api.Package{}
@@ -129,9 +133,13 @@ func (r *RepoReducer) requires(p *api.Package) (wants []*api.Package) {
 }
 
 func NewRepoReducer(repos *bazeldnf.Repositories, repoFiles []string, baseSystem string, arch string, cacheHelper *repo.CacheHelper) *RepoReducer {
+	implicitRequires := make([]string, 0, 1)
+	if baseSystem != "" {
+		implicitRequires = append(implicitRequires, baseSystem)
+	}
 	return &RepoReducer{
 		packageInfo:      nil,
-		implicitRequires: []string{baseSystem},
+		implicitRequires: implicitRequires,
 		loader: RepoLoader{
 			repoFiles:     repoFiles,
 			architectures: []string{"noarch", arch},

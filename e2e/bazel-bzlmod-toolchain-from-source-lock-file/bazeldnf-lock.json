@@ -1,7 +1,5 @@
 {
 	"cli-arguments": [
-		"--targets",
-		"bash",
 		"--output",
 		"bazeldnf-lock.json",
 		"-i",
@@ -19,7 +17,8 @@
 		"-i",
 		"audit-libs",
 		"-i",
-		"fedora-release-common"
+		"fedora-release-common",
+		"bash"
 	],
 	"repositories": {
 		"41-x86_64-primary-repo": [
@@ -40,13 +39,6 @@
 			]
 		},
 		{
-			"name": "fedora-release-container",
-			"sha256": "db08db9842bd33eee6f156dc9cf4703911669c8dfd83af1a37d19d3dade1dcd0",
-			"href": "Packages/f/fedora-release-container-41-0.21.noarch.rpm",
-			"repository": "41-x86_64-primary-repo",
-			"dependencies": []
-		},
-		{
 			"name": "ncurses-base",
 			"sha256": "48f210a4fa76a3d7faf56a0742b0465063feec816ba0f279d6841b8b31dcbaa2",
 			"href": "Packages/n/ncurses-base-6.5-2.20240629.fc41.noarch.rpm",
@@ -58,16 +50,13 @@
 			"sha256": "965d08fdd9eacb2eeb3c693fd70e8f725bdf73fe11186e9eff47d8d51b13709a",
 			"href": "Packages/n/ncurses-libs-6.5-2.20240629.fc41.x86_64.rpm",
 			"repository": "41-x86_64-primary-repo",
-			"dependencies": [
-				"ncurses-base"
-			]
+			"dependencies": []
 		}
 	],
 	"targets": [
 		"bash"
 	],
 	"ignored": [
-		"fedora-release-common",
 		"filesystem",
 		"glibc"
 	]

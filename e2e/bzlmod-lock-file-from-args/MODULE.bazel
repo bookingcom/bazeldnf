@@ -32,7 +32,22 @@ bazeldnf = use_extension("@bazeldnf//bazeldnf:extensions.bzl", "bazeldnf")
 bazeldnf.toolchain(disable = True)
 bazeldnf.config(
     name = "bazeldnf_rpms",
+    excludes = [
+        "filesystem",
+        "setup",
+        "basesystem",
+        "glibc-[0-9]",
+        "glibc-devel",
+        "coreutils",
+        "alternatives",
+        "audit-libs",
+        "fedora-release-common",
+    ],
     lock_file = "//:bazeldnf-lock.json",
+    repofile = "//:repo.yaml",
+    rpms = [
+        "bash",
+    ],
 )
 use_repo(
     bazeldnf,
