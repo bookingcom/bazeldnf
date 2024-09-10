@@ -12,7 +12,7 @@ load(":repositories.bzl", "bazeldnf_register_toolchains")
 _ALIAS_TEMPLATE = """\
 alias(
     name = "{name}",
-    actual = "@{name}//rpm",
+    actual = "@{actual_name}//rpm",
     visibility = ["//visibility:public"],
 )
 """
@@ -54,13 +54,24 @@ def _alias_repository_impl(repository_ctx):
         ),
     )
     for rpm in repository_ctx.attr.rpms:
-        repo_name = rpm.repo_name
-        repository_ctx.file("%s/BUILD.bazel" % repo_name, _ALIAS_TEMPLATE.format(name = repo_name))
+        actual_name = rpm.repo_name
+        name = actual_name.split(repository_ctx.attr.repository_prefix, 1)[1]
+        repository_ctx.file(
+            "%s/BUILD.bazel" % name,
+            _ALIAS_TEMPLATE.format(
+                name = name,
+                actual_name = actual_name,
+            ),
+        )
+
     if not repository_ctx.attr.rpms:
         for rpm in repository_ctx.attr.rpms_to_install:
             repository_ctx.file(
                 "%s/BUILD.bazel" % rpm,
-                _UPDATE_LOCK_FILE_TEMPLATE.format(repo = repository_ctx.name.rsplit("~", 1)[-1]),
+                _UPDATE_LOCK_FILE_TEMPLATE.format(
+                    repo = repository_ctx.name.rsplit("~", 1)[-1]
+                        .split(repository_ctx.attr.repository_prefix, 1)[1],
+                ),
             )
 
 _alias_repository = repository_rule(
@@ -71,6 +82,7 @@ _alias_repository = repository_rule(
         "rpms_to_install": attr.string_list(),
         "excludes": attr.string_list(),
         "repofile": attr.label(),
+        "repository_prefix": attr.string(),
     },
 )
 
@@ -86,6 +98,7 @@ def _handle_lock_file(config, module_ctx, registered_rpms = {}):
         "rpms_to_install": config.rpms,
         "excludes": config.excludes,
         "repofile": config.repofile,
+        "repository_prefix": config.rpm_repository_prefix,
     }
 
     if not module_ctx.path(config.lock_file).exists:
@@ -97,13 +110,11 @@ def _handle_lock_file(config, module_ctx, registered_rpms = {}):
     content = module_ctx.read(config.lock_file)
     lock_file_json = json.decode(content)
 
-    rpms = []
-
     for rpm in lock_file_json.get("packages", []):
         dependencies = rpm.pop("dependencies", [])
-        dependencies = [x.replace("+", "pp") for x in dependencies]
+        dependencies = [x.replace("+", "plus") for x in dependencies]
         dependencies = ["@{}{}//rpm".format(config.rpm_repository_prefix, x) for x in dependencies]
-        name = rpm.pop("name").replace("+", "pp")
+        name = rpm.pop("name").replace("+", "plus")
         name = "{}{}".format(config.rpm_repository_prefix, name)
         if name in registered_rpms:
             continue
@@ -120,9 +131,8 @@ def _handle_lock_file(config, module_ctx, registered_rpms = {}):
             urls = urls,
             **rpm
         )
-        rpms.append(name)
 
-    repository_args["rpms"] = ["@@%s//rpm" % x for x in rpms]
+    repository_args["rpms"] = ["@@%s//rpm" % x for x in registered_rpms.keys()]
 
     _alias_repository(
         **repository_args
