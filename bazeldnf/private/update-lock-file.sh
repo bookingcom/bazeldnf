@@ -12,7 +12,7 @@ fi
 cd ${BUILD_WORKSPACE_DIRECTORY}
 
 if [ -z "@@BZLMOD_ARGS@@" ]; then
-  exec $BAZELDNF_SHORT_PATH bzlmod $(cat @@LOCK_FILE@@ | $JQ_SHORT_PATH -r '."cli-arguments"'[])
+  exec $BAZELDNF_SHORT_PATH bzlmod $(cat @@LOCK_FILE@@ | $JQ_SHORT_PATH -r '."cli-arguments"'[]) "$@"
 else
-  exec $BAZELDNF_SHORT_PATH bzlmod @@BZLMOD_ARGS@@
+  exec $BAZELDNF_SHORT_PATH bzlmod @@BZLMOD_ARGS@@ "$@"
 fi
