@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-BAZELDNF_SHORT_PATH=$(readlink @@BAZELDNF_SHORT_PATH@@)
-JQ_SHORT_PATH=$(readlink @@JQ_SHORT_PATH@@)
+BAZELDNF_SHORT_PATH="${BASH_SOURCE[0]}.runfiles/@@REPO_NAME@@/@@BAZELDNF_SHORT_PATH@@"
+JQ_SHORT_PATH="${BASH_SOURCE[0]}.runfiles/@@REPO_NAME@@/@@JQ_SHORT_PATH@@"
 if [ -z "${BUILD_WORKSPACE_DIRECTORY-}" ]; then
   echo "error: BUILD_WORKSPACE_DIRECTORY not set" >&2
   exit 1
