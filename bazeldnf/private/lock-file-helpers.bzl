@@ -10,9 +10,10 @@ def _update_lock_file_impl(ctx):
     jq = ctx.toolchains[JQ_TOOLCHAIN].jqinfo.bin
 
     substitutions = {
-        "@@BAZELDNF_SHORT_PATH@@": shell.quote(bazeldnf._tool.short_path),
-        "@@JQ_SHORT_PATH@@": shell.quote(jq.short_path),
+        "@@BAZELDNF_SHORT_PATH@@": bazeldnf._tool.short_path,
+        "@@JQ_SHORT_PATH@@": jq.short_path,
         "@@LOCK_FILE@@": shell.quote(ctx.attr.lock_file),
+        "@@REPO_NAME@@": ctx.workspace_name,
         "@@BZLMOD_ARGS@@": "",
     }
 
