@@ -1,21 +1,610 @@
 {
-    "name": "bazeldnf-rpms",
-    "rpms": [
-        {
-            "name": "libvirt-libs",
-            "sha256": "3a0a3d88c6cb90008fbe49fe05e7025056fb9fa3a887c4a78f79e63f8745c845",
-            "urls": [
-                "https://download-ib01.fedoraproject.org/pub/fedora/linux/releases/32/Everything/x86_64/os/Packages/l/libvirt-libs-6.1.0-2.fc32.x86_64.rpm",
-                "https://storage.googleapis.com/builddeps/3a0a3d88c6cb90008fbe49fe05e7025056fb9fa3a887c4a78f79e63f8745c845"
-            ]
-
-        },
-        {
-            "sha256": "2ebb715341b57a74759aff415e0ff53df528c49abaa7ba5b794b4047461fa8d6",
-            "urls": [
-                "https://download-ib01.fedoraproject.org/pub/fedora/linux/releases/32/Everything/x86_64/os/Packages/l/libvirt-devel-6.1.0-2.fc32.x86_64.rpm",
-                "https://storage.googleapis.com/builddeps/2ebb715341b57a74759aff415e0ff53df528c49abaa7ba5b794b4047461fa8d6"
-            ]
-        }
-    ]
+	"cli-arguments": [
+		"-r",
+		"repo.yaml",
+		"-o",
+		"rpms.json",
+		"-i",
+		"bash",
+		"-i",
+		"ca-certificates",
+		"-i",
+		"pkgconf-pkg-config",
+		"-i",
+		"xz-libs",
+		"-i",
+		"zlib-ng-compat",
+		"libvirt-devel",
+		"--nobest"
+	],
+	"repositories": {
+		"41-x86_64-primary-repo": [
+			"https://eu.edge.kernel.org/fedora/development/41/Everything/x86_64/os/",
+			"https://mirror.i3d.net/pub/fedora/linux/development/41/Everything/x86_64/os/",
+			"https://mirror.nl.mirhosting.net/fedora/linux/development/41/Everything/x86_64/os/",
+			"https://ftp.plusline.net/fedora/linux/development/41/Everything/x86_64/os/"
+		]
+	},
+	"packages": [
+		{
+			"name": "alternatives",
+			"sha256": "e2a2db487e322e4945c73af14b234bea4ef19fc34f8fd407258618bc25c10c1b",
+			"href": "Packages/a/alternatives-1.30-1.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"glibc"
+			]
+		},
+		{
+			"name": "audit-libs",
+			"sha256": "62afbefabfb9a19ed8ce0d5d2956f148a8a15e9bdbcfa575414e5a8bb40f12b5",
+			"href": "Packages/a/audit-libs-4.0.2-1.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"glibc",
+				"libcap-ng"
+			]
+		},
+		{
+			"name": "basesystem",
+			"sha256": "930722d893b77edf204d16d9f9c6403ecefe339036b699bc445ad9ab87e0e323",
+			"href": "Packages/b/basesystem-11-21.fc41.noarch.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"filesystem",
+				"setup"
+			]
+		},
+		{
+			"name": "coreutils",
+			"sha256": "d85a700a428d7b01c5580640129301c69d4beaef3661434cca281ad73b012f6d",
+			"href": "Packages/c/coreutils-9.5-9.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"coreutils-common",
+				"glibc",
+				"gmp",
+				"libacl",
+				"libattr",
+				"libcap",
+				"libselinux",
+				"openssl-libs"
+			]
+		},
+		{
+			"name": "coreutils-common",
+			"sha256": "f6499ed0c8973bd11ff0d09c0c6afbac6578b1add1482e81cfcf60af25837b39",
+			"href": "Packages/c/coreutils-common-9.5-9.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "crypto-policies",
+			"sha256": "f21927119efa7058decc3b804ceb6845f4449703721ebcd7f23961bb9e24f720",
+			"href": "Packages/c/crypto-policies-20240826-1.gite824389.fc41.noarch.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "cyrus-sasl-gssapi",
+			"sha256": "c8b425e76ecaa5e663265e91c36b234ebb030f2cd696c5c27cc19690d884aaae",
+			"href": "Packages/c/cyrus-sasl-gssapi-2.1.28-27.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"cyrus-sasl-lib",
+				"glibc",
+				"krb5-libs",
+				"libcom_err",
+				"libxcrypt"
+			]
+		},
+		{
+			"name": "cyrus-sasl-lib",
+			"sha256": "20a7d6aa24c38317a4357f59df0f6276ce21b1f11791cbd3d7b45b1c46cdff54",
+			"href": "Packages/c/cyrus-sasl-lib-2.1.28-27.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"gdbm-libs",
+				"glibc",
+				"libxcrypt"
+			]
+		},
+		{
+			"name": "fedora-gpg-keys",
+			"sha256": "e27247259275e86f55749d92974942bf034890d44b13d85feea2a220bdbbfe78",
+			"href": "Packages/f/fedora-gpg-keys-41-0.4.noarch.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"filesystem"
+			]
+		},
+		{
+			"name": "fedora-repos",
+			"sha256": "60f6bf5eb27dc0ea43d139b40d23debae21f21362837b8637c2e72eb2fa4a59f",
+			"href": "Packages/f/fedora-repos-41-0.4.noarch.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"generic-release"
+			]
+		},
+		{
+			"name": "filesystem",
+			"sha256": "acf1be766d6d5ab70670a04525db82164b89c323a80e4585b1c6d879ea1f6549",
+			"href": "Packages/f/filesystem-3.18-23.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"setup"
+			]
+		},
+		{
+			"name": "gawk",
+			"sha256": "e3171e0dcf7ef65099f48e8cba96caf8b3be91f80a84b6128e152c0f749f7d45",
+			"href": "Packages/g/gawk-5.3.0-4.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"glibc",
+				"gmp",
+				"mpfr",
+				"readline"
+			]
+		},
+		{
+			"name": "gdbm-libs",
+			"sha256": "19658808d4aaed6fe72e15a8df66eb8387bce595cf9bea009fe96c99ea64c6ab",
+			"href": "Packages/g/gdbm-libs-1.23-7.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"glibc"
+			]
+		},
+		{
+			"name": "generic-release",
+			"sha256": "bcb07755e7c3df41c09b4f1bccab87f3566a38d4ba624dcf243798750a961ce1",
+			"href": "Packages/g/generic-release-41-0.1.noarch.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"generic-release-common"
+			]
+		},
+		{
+			"name": "generic-release-common",
+			"sha256": "c63c83bf7006bb309ee9916fc70efc81640e2b19a6241e573c78ffd33e50a89e",
+			"href": "Packages/g/generic-release-common-41-0.1.noarch.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "glib2",
+			"sha256": "a44162d630e17cdab86b27c83e85c480e048ac064f5b58923875a552aff62391",
+			"href": "Packages/g/glib2-2.82.0-1.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"glibc",
+				"gnutls",
+				"libffi",
+				"libmount",
+				"libselinux",
+				"pcre2"
+			]
+		},
+		{
+			"name": "glibc",
+			"sha256": "4c3b598bdd42703646e6deb63a77ea71fd541778ecaccbec6a8c801f312a5e57",
+			"href": "Packages/g/glibc-2.40-3.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"glibc-common",
+				"glibc-langpack-kw",
+				"libgcc"
+			]
+		},
+		{
+			"name": "glibc-common",
+			"sha256": "cfa2f5b0ddb65420a9746d33a26b926b213584e076c932ac162a5252c1bf043a",
+			"href": "Packages/g/glibc-common-2.40-3.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "glibc-langpack-kw",
+			"sha256": "35b127f7b3b9c15242a76f031c23e4715c2b596fd12ed796693938f8b3a4f7d0",
+			"href": "Packages/g/glibc-langpack-kw-2.40-3.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "gmp",
+			"sha256": "e3fe1dd1bee79736773918e3200b5488e7c1cbaeb0484996647426b59424b327",
+			"href": "Packages/g/gmp-6.3.0-2.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "gnutls",
+			"sha256": "1065ac084c444d0698c646167a4c97642a90b8c858f4c33d9aafbbf1c72b73a3",
+			"href": "Packages/g/gnutls-3.8.6-7.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"libidn2",
+				"libtasn1",
+				"libunistring",
+				"nettle",
+				"p11-kit",
+				"p11-kit-trust"
+			]
+		},
+		{
+			"name": "keyutils-libs",
+			"sha256": "efbdc65f2384f9ef01f25824585bccf475c05e1494df3f57a45bafbe71c51c1f",
+			"href": "Packages/k/keyutils-libs-1.6.3-4.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "krb5-libs",
+			"sha256": "4ad19c4384ba34a61b7fd3dc5337fd4f182a95bc30608696ff53612e162c4558",
+			"href": "Packages/k/krb5-libs-1.21.3-2.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"libcom_err",
+				"libselinux",
+				"libverto",
+				"openssl-libs",
+				"sed"
+			]
+		},
+		{
+			"name": "libacl",
+			"sha256": "55acb1bc9bc9155831d225ba5b71b4de21c07b88817041d7297fee1dd3348cda",
+			"href": "Packages/l/libacl-2.3.2-2.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"libattr"
+			]
+		},
+		{
+			"name": "libattr",
+			"sha256": "7cfb17f43d061638fca75e30167d64661d6c155d9a15de063223d3d07f3e8560",
+			"href": "Packages/l/libattr-2.5.2-4.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "libblkid",
+			"sha256": "5b8c2a01f39f6d82c06e49f0bcf1f375cf64ac04104d96b932006d6c8a6cb892",
+			"href": "Packages/l/libblkid-2.40.2-4.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"libuuid"
+			]
+		},
+		{
+			"name": "libcap",
+			"sha256": "f6266c709e24b197121139273c74f9ab3cbe772fe61444a996d46ef972205438",
+			"href": "Packages/l/libcap-2.70-4.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"libgcc",
+				"pam-libs"
+			]
+		},
+		{
+			"name": "libcap-ng",
+			"sha256": "416445ec52753b5f73436d4f3bec9b1223a357783fc3d8479b1a32a4fa195278",
+			"href": "Packages/l/libcap-ng-0.8.5-3.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "libcom_err",
+			"sha256": "6b58e0de0edf924d1f78f669c3ebb1e5b00b6e932a4330cb2a8faeb67a62e589",
+			"href": "Packages/l/libcom_err-1.47.1-3.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "libcurl-minimal",
+			"sha256": "f0c9b3ac3a71c5d0a2ba4e1f10a8c0ae17b32554ea8ab25237aac4dc6d546f27",
+			"href": "Packages/l/libcurl-minimal-8.9.1-2.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"libidn2",
+				"libnghttp2",
+				"openssl-libs"
+			]
+		},
+		{
+			"name": "libeconf",
+			"sha256": "a93f34729f577d0ac3fb3a6943b56eb90c3befe5bd483d0a7a2d2f18721db3e1",
+			"href": "Packages/l/libeconf-0.6.2-3.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "libffi",
+			"sha256": "41d9602a075ffeb564457ec13a693941984ca85ad255aaf19dbcb42d2cd8986c",
+			"href": "Packages/l/libffi-3.4.6-3.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "libgcc",
+			"sha256": "927724749b49f3adfa75bc3218e2c1ad28f7c5909a459e941319057728bb6f84",
+			"href": "Packages/l/libgcc-14.2.1-1.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "libidn2",
+			"sha256": "2b1692ba36b1603504ce11f5a83c46160212b060d2651ed725cf02f5f5ef8847",
+			"href": "Packages/l/libidn2-2.3.7-2.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"libunistring"
+			]
+		},
+		{
+			"name": "libmount",
+			"sha256": "6524148db4db7439ad19ec43ff6b36cd99dae2c507a0a3c41763563014baefe4",
+			"href": "Packages/l/libmount-2.40.2-4.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"libselinux",
+				"libuuid"
+			]
+		},
+		{
+			"name": "libnghttp2",
+			"sha256": "79513375c4eecef29b3b68987d36fe81bdd6209e18cfc85624c1003658e16727",
+			"href": "Packages/l/libnghttp2-1.62.1-2.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "libnl3",
+			"sha256": "3373c36c1fbc60691cc347308e6874004a65efd67bd6a88b4c0c2bc1c5a75c5f",
+			"href": "Packages/l/libnl3-3.10.0-1.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "libselinux",
+			"sha256": "780d7c7f4d570e6619c089a6a12bcaa5f2cb7d8501c9377041bb053644086d9b",
+			"href": "Packages/l/libselinux-3.7-5.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"libsepol",
+				"pcre2"
+			]
+		},
+		{
+			"name": "libsepol",
+			"sha256": "0103e50c09d8cea409253601befac375dbc616a5470b2cff49cbc4724254640e",
+			"href": "Packages/l/libsepol-3.7-2.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "libssh",
+			"sha256": "993893e0a6b87a6feea297df108c0bf82cee2e2b7f3a38de7910b48072461fcc",
+			"href": "Packages/l/libssh-0.10.6-8.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"libssh-config",
+				"openssl-libs"
+			]
+		},
+		{
+			"name": "libssh-config",
+			"sha256": "5b0415fc7c513c9709b6aee3ff99c2299927b22195e7a0a969d0d610dcee2bcd",
+			"href": "Packages/l/libssh-config-0.10.6-8.fc41.noarch.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "libssh2",
+			"sha256": "c1c29e5264f0dd282068e0c1c2ea7b4a6ed90420deba1d513eda83e45870e2c2",
+			"href": "Packages/l/libssh2-1.11.0-8.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"openssl-libs"
+			]
+		},
+		{
+			"name": "libtasn1",
+			"sha256": "8ad185fbdbe9c00908df2e404606e625cce6d5ff975742c84a9b2f6c2e68a2c0",
+			"href": "Packages/l/libtasn1-4.19.0-9.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "libtirpc",
+			"sha256": "e44131145b09391742e23cddbbc1880221d00bb3c1471e643d520aec5a233c0e",
+			"href": "Packages/l/libtirpc-1.3.5-0.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "libunistring",
+			"sha256": "22bce72655316d8f5d80a813896e5bc8e5988513a5f10194cbf5fa951d82150f",
+			"href": "Packages/l/libunistring-1.1-8.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "libuuid",
+			"sha256": "063e0ba998142b1152524fc413ce9de2e9d98e7fcb5a64bdd759acdbdb3b5272",
+			"href": "Packages/l/libuuid-2.40.2-4.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "libverto",
+			"sha256": "1c33384e9b7bb1899a1de5654a3e4a71f8e5cc108d4abfeea43e307658a96962",
+			"href": "Packages/l/libverto-0.3.2-9.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "libvirt-devel",
+			"sha256": "6ae2117c8f91f91be5b1029715eb9f7e5131525457eef931933f219b1822fc44",
+			"href": "Packages/l/libvirt-devel-10.6.0-1.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"libvirt-libs"
+			]
+		},
+		{
+			"name": "libvirt-libs",
+			"sha256": "bafd87980c5a31a70d2ffa2b34771711fbb13e41761942d6a5de222fa56af645",
+			"href": "Packages/l/libvirt-libs-10.6.0-1.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"libwsman1",
+				"libxml2",
+				"numactl-libs",
+				"yajl"
+			]
+		},
+		{
+			"name": "libwsman1",
+			"sha256": "1af4dfd985f08f89a53ff0d1ef70076440319f2c21986159224c3d51f97f8537",
+			"href": "Packages/l/libwsman1-2.7.2-11.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"libxml2"
+			]
+		},
+		{
+			"name": "libxcrypt",
+			"sha256": "4462d3fea01a178225a35df37d02bdb42f6147c202fda58d53b9ca344d7ba928",
+			"href": "Packages/l/libxcrypt-4.4.36-7.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "libxml2",
+			"sha256": "f0fe534ba3e65a3199fb3d8051cdbafd340f65d561df9d6a5edb597335c086cd",
+			"href": "Packages/l/libxml2-2.12.8-2.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "mpfr",
+			"sha256": "36e691f1f0a282e173d2fd24339f1eea623689cd0c30f8e322e33e4d13755c13",
+			"href": "Packages/m/mpfr-4.2.1-5.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "ncurses-base",
+			"sha256": "48f210a4fa76a3d7faf56a0742b0465063feec816ba0f279d6841b8b31dcbaa2",
+			"href": "Packages/n/ncurses-base-6.5-2.20240629.fc41.noarch.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "ncurses-libs",
+			"sha256": "965d08fdd9eacb2eeb3c693fd70e8f725bdf73fe11186e9eff47d8d51b13709a",
+			"href": "Packages/n/ncurses-libs-6.5-2.20240629.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "nettle",
+			"sha256": "48ae4c875102efc0a3204d1a4b0b9c478b60b9794700a9baeb0a3242c26684e7",
+			"href": "Packages/n/nettle-3.10-3.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "numactl-libs",
+			"sha256": "366b7c13ed6885fcea89fd6f8c0a54f0b2783b086a875c79d66529705c365770",
+			"href": "Packages/n/numactl-libs-2.0.18-2.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "openssl-libs",
+			"sha256": "ec0311ade72eaa18b11f3d1ce3e2f544bb9b1a046b0ce94e003ea27e1033a3b0",
+			"href": "Packages/o/openssl-libs-3.2.2-5.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "p11-kit",
+			"sha256": "6939b2b5908ae3844f4013048087e66e0cab1b085f318d2af80a912d55f473ff",
+			"href": "Packages/p/p11-kit-0.25.5-3.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "p11-kit-trust",
+			"sha256": "62d3f7c3ad94ece6aa2cd9fddd44c570d87d48523e634ea359f61dadc3cce625",
+			"href": "Packages/p/p11-kit-trust-0.25.5-3.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "pam-libs",
+			"sha256": "6dd185a7ac2738046a22967aaa0275e2251158ffb929c0369e497ede19341df7",
+			"href": "Packages/p/pam-libs-1.6.1-5.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "pcre2",
+			"sha256": "c0c88d61ca0902ed44583a42b29701e4936e78a32ce2064355ae073aec081008",
+			"href": "Packages/p/pcre2-10.44-1.fc41.1.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": [
+				"pcre2-syntax"
+			]
+		},
+		{
+			"name": "pcre2-syntax",
+			"sha256": "e6ef266c97865bc727504bd3623f9188687775d7d0a13a7cb35f2af69c726da4",
+			"href": "Packages/p/pcre2-syntax-10.44-1.fc41.1.noarch.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "readline",
+			"sha256": "28f70edda5e9afc6e6d67d637d68133b3b37d79a4c21f30078777701a7c3f649",
+			"href": "Packages/r/readline-8.2-10.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "sed",
+			"sha256": "76344047114499b8f44545d103e5848c473525adcb5b189f85cd0db65f4f44af",
+			"href": "Packages/s/sed-4.9-3.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "setup",
+			"sha256": "0b119e9efccd2d56c2aa845aa25bd7f57ac051bf8abd64af12ea783d1c39002b",
+			"href": "Packages/s/setup-2.15.0-5.fc41.noarch.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"name": "yajl",
+			"sha256": "a04fef5d3dad1c4854b679aa909d63b218cdc543dc8945781afcda5e6a3cf9fe",
+			"href": "Packages/y/yajl-2.1.0-24.fc41.x86_64.rpm",
+			"repository": "41-x86_64-primary-repo",
+			"dependencies": []
+		}
+	],
+	"targets": [
+		"libvirt-devel"
+	],
+	"ignored": [
+		"bash",
+		"ca-certificates",
+		"pkgconf-pkg-config",
+		"xz-libs",
+		"zlib-ng-compat"
+	]
 }

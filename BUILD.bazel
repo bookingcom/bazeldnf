@@ -14,8 +14,6 @@ gazelle_binary(
 )
 
 # gazelle:prefix github.com/rmohr/bazeldnf
-# gazelle:resolve go github.com/bazelbuild/buildtools/build @com_github_bazelbuild_buildtools//build:go_default_library
-# gazelle:resolve go github.com/bazelbuild/buildtools/edit @com_github_bazelbuild_buildtools//edit:go_default_library
 gazelle(
     name = "gazelle",
     args = [
@@ -82,13 +80,6 @@ pkg_tar(
 cc_library(
     name = "bar",
     srcs = ["//:something_libs/usr/lib64"],
-)
-
-bzl_library(
-    name = "build_deps",
-    srcs = ["build_deps.bzl"],
-    visibility = ["//visibility:public"],
-    deps = ["@gazelle//:deps"],
 )
 
 bzl_library(
