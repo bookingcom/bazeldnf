@@ -24,7 +24,11 @@ def _update_lock_file_impl(ctx):
         bzlmod_args.extend(ctx.attr.rpms)
     if bzlmod_args:
         bzlmod_args = ["-r", ctx.attr.repofile, "-o", ctx.attr.lock_file] + bzlmod_args
-        substitutions["@@BZLMOD_ARGS@@"] = " ".join(bzlmod_args)
+
+    if ctx.attr.nobest and "--nobest":
+        bzlmod_args.append("--nobest")
+
+    substitutions["@@BZLMOD_ARGS@@"] = " ".join(bzlmod_args)
 
     ctx.actions.expand_template(
         template = ctx.file._runner,
@@ -50,6 +54,7 @@ update_lock_file = rule(
         "rpms": attr.string_list(),
         "excludes": attr.string_list(),
         "repofile": attr.string(),
+        "nobest": attr.bool(default = False),
         "_runner": attr.label(allow_single_file = True, default = Label("//bazeldnf/private:update-lock-file.sh")),
     },
     toolchains = [
