@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/user"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -28,6 +29,18 @@ type CacheHelper struct {
 	cacheDir string
 }
 
+func expand(path string) (string, error) {
+	if len(path) == 0 || path[0] != '~' {
+		return path, nil
+	}
+
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(usr.HomeDir, path[1:]), nil
+}
+
 func NewCacheHelper(cacheDir ...string) *CacheHelper {
 	if len(cacheDir) == 0 {
 		cacheDir = append(cacheDir, cacheHelperValues.cacheDir)
@@ -37,8 +50,14 @@ func NewCacheHelper(cacheDir ...string) *CacheHelper {
 
 	logrus.Infof("Using cache directory %s", cacheDir[0])
 
+	dir, err := expand(cacheDir[0])
+
+	if err != nil {
+		panic(err)
+	}
+
 	return &CacheHelper{
-		cacheDir: cacheDir[0],
+		cacheDir: dir,
 	}
 }
 
