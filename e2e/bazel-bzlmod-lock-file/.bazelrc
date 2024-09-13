@@ -7,6 +7,7 @@ import %workspace%/../../.aspect/bazelrc/debug.bazelrc
 import %workspace%/../../.aspect/bazelrc/performance.bazelrc
 
 common --enable_bzlmod
+common --extra_toolchains=@bazeldnf//cmd:bazeldnf-host-toolchain
 
 # Specific project flags go here if we have some
 

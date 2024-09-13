@@ -57,7 +57,10 @@ def _alias_repository_impl(repository_ctx):
     )
     for rpm in repository_ctx.attr.rpms:
         actual_name = rpm.repo_name
+        if not repository_ctx.attr.repository_prefix:
+            continue
         name = actual_name.split(repository_ctx.attr.repository_prefix, 1)[-1]
+
         repository_ctx.file(
             "%s/BUILD.bazel" % name,
             _ALIAS_TEMPLATE.format(
@@ -144,8 +147,9 @@ def _handle_lock_file(config, module_ctx, registered_rpms = {}):
     return config.name
 
 def _toolchain_extension(module_ctx):
+    # make sure all our dependencies are registered as those may be needed when those
+    # dependening in this repo build the toolchain from sources
     repos = []
-
     for mod in module_ctx.modules:
         for toolchain in mod.tags.toolchain:
             if toolchain.name != _DEFAULT_NAME and not mod.is_root:
