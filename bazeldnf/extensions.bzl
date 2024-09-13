@@ -81,6 +81,7 @@ update_lock_file(
     rpms = [{rpms}],
     excludes = [{excludes}],
     repofile = "{repofile}",
+    nobest = {nobest},
 )
 """
 
@@ -106,6 +107,7 @@ def _alias_repository_impl(repository_ctx):
             rpms = ", ".join(["'{}'".format(x) for x in repository_ctx.attr.rpms_to_install]),
             excludes = ", ".join(["'{}'".format(x) for x in repository_ctx.attr.excludes]),
             repofile = repofile,
+            nobest = "True" if repository_ctx.attr.nobest else "False",
         ),
     )
     for rpm in repository_ctx.attr.rpms:
@@ -137,6 +139,7 @@ _alias_repository = repository_rule(
         "excludes": attr.string_list(),
         "repofile": attr.label(),
         "repository_prefix": attr.string(),
+        "nobest": attr.bool(default = False),
     },
 )
 
@@ -153,6 +156,7 @@ def _handle_lock_file(config, module_ctx, registered_rpms = {}):
         "excludes": config.excludes,
         "repofile": config.repofile,
         "repository_prefix": config.rpm_repository_prefix,
+        "nobest": config.nobest,
     }
 
     if not module_ctx.path(config.lock_file).exists:
@@ -297,6 +301,10 @@ The lock file content is as: TBD
         ),
         "excludes": attr.string_list(
             doc = "Regex to pass to bazeldnf to exclude from the dependency tree",
+        ),
+        "nobest": attr.bool(
+            doc = "Allow picking versions which are not the newest",
+            default = False,
         ),
     },
 )
