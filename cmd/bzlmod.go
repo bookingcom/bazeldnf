@@ -211,7 +211,7 @@ func (opts *BzlmodOpts) RunE(cmd *cobra.Command, rpms []string) error {
 		return err
 	}
 
-	repoReducer := reducer.NewRepoReducer(repos, nil, "", "", opts.arch, repo.NewCacheHelper())
+	repoReducer := reducer.NewRepoReducer(repos, bzlmodopts.repoFiles, "", opts.arch, repo.NewCacheHelper())
 
 	logrus.Info("Loading packages.")
 	if err := repoReducer.Load(); err != nil {

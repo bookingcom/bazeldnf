@@ -27,7 +27,7 @@ func (r *RepoReducer) Load() error {
 }
 
 func (r *RepoReducer) PackageCount() int {
-	return len(r.packages)
+	return len(r.packageInfo.packages)
 }
 
 func (r *RepoReducer) Resolve(packages []string, ignoreMissing bool) (matched []string, involved []*api.Package, err error) {
