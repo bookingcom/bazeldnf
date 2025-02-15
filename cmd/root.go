@@ -40,6 +40,11 @@ func Execute() {
 	rootCmd.AddCommand(NewLddCmd())
 	rootCmd.AddCommand(NewVerifyCmd())
 	rootCmd.AddCommand(NewBzlmodCmd())
+
+	if chrootPath, hasIt := os.LookupEnv("BUILD_WORKING_DIRECTORY"); hasIt {
+		os.Chdir(chrootPath)
+	}
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
