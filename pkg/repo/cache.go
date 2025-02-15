@@ -3,6 +3,7 @@ package repo
 import (
 	"compress/gzip"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -11,11 +12,13 @@ import (
 	"strings"
 
 	"github.com/adrg/xdg"
+	"github.com/mholt/archives"
 	"github.com/rmohr/bazeldnf/pkg/api"
 	"github.com/rmohr/bazeldnf/pkg/api/bazeldnf"
 	"github.com/rmohr/bazeldnf/pkg/rpm"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/context"
 )
 
 type cacheHelperOpts struct {
@@ -107,16 +110,32 @@ func (r *CacheHelper) CurrentPrimary(repo *bazeldnf.Repository) (*api.Repository
 	if err != nil {
 		return nil, err
 	}
-
 	defer file.Close()
-	reader, err := gzip.NewReader(file)
+
+	ctx := context.TODO()
+	format, stream, err := archives.Identify(ctx, primaryName, file)
 	if err != nil {
+		logrus.Debugf("failed to identify: %s %v", primaryName, err)
 		return nil, err
 	}
-	defer reader.Close()
+	defer ctx.Done()
+
+	var decomp archives.Decompressor
+	var ok bool
+	if decomp, ok = format.(archives.Decompressor); !ok {
+		logrus.Debugf("failed to create decompressor")
+		return nil, errors.New("failed to create decompressor")
+	}
+
+	rc, err := decomp.OpenReader(stream)
+	if err != nil {
+		logrus.Debugf("failed to decompress: %+v", err)
+		return nil, err
+	}
+	defer rc.Close()
 
 	repository := &api.Repository{}
-	err = xml.NewDecoder(reader).Decode(repository)
+	err = xml.NewDecoder(rc).Decode(repository)
 	if err != nil {
 		return nil, err
 	}
