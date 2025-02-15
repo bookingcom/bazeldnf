@@ -1,7 +1,6 @@
 package main
 
 import (
-	"cmp"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -18,11 +17,8 @@ import (
 )
 
 type BzlmodOpts struct {
-	arch             string
-	nobest           bool
-	out              string
-	forceIgnoreRegex []string
-	repoFiles        []string
+	out       string
+	repoFiles []string
 }
 
 var bzlmodopts = BzlmodOpts{}
@@ -38,14 +34,12 @@ func NewBzlmodCmd() *cobra.Command {
 		},
 	}
 
-	bzlmodCmd.Flags().StringVarP(&bzlmodopts.arch, "arch", "a", "x86_64", "target architecture")
-	bzlmodCmd.Flags().BoolVarP(&bzlmodopts.nobest, "nobest", "n", false, "allow picking versions which are not the newest")
-	bzlmodCmd.Flags().StringVarP(&bzlmodopts.out, "output", "o", "bazeldnf-lock.json", "where to write the resolved dependency tree")
-	bzlmodCmd.Flags().StringArrayVarP(&bzlmodopts.forceIgnoreRegex, "force-ignore-with-dependencies", "i", []string{}, "Packages matching these regex patterns will not be installed. Allows force-removing unwanted dependencies. Be careful, this can lead to hidden missing dependencies.")
+	addResolveHelperFlags(bzlmodCmd)
+	repo.AddCacheHelperFlags(bzlmodCmd)
+
+	bzlmodCmd.Flags().StringVarP(&bzlmodopts.out, "output", "o", "/dev/stdout", "Output file for the lock contents (defaults to /dev/stdout)")
 	bzlmodCmd.Flags().StringArrayVarP(&bzlmodopts.repoFiles, "repofile", "r", []string{"repo.yaml"}, "repository information file. Can be specified multiple times. Will be used by default if no explicit inputs are provided.")
 	bzlmodCmd.Args = cobra.MinimumNArgs(1)
-
-	repo.AddCacheHelperFlags(bzlmodCmd)
 
 	return bzlmodCmd
 }
@@ -80,15 +74,6 @@ type BzlmodLockFile struct {
 	Packages             []InstalledPackage  `json:"packages"`
 	Targets              []string            `json:"targets,omitempty"`
 	ForceIgnored         []string            `json:"ignored,omitempty"`
-}
-
-func keys[K cmp.Ordered, V any](m map[K]V) []K {
-	keys := make([]K, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	slices.Sort(keys)
-	return keys
 }
 
 func DumpJSON(result ResolvedResult, targets []string, cmdline []string) ([]byte, error) {
@@ -206,12 +191,15 @@ func computeDependencies(requires []string, providers map[string]string, ignored
 }
 
 func (opts *BzlmodOpts) RunE(cmd *cobra.Command, rpms []string) error {
+	logrus.Info("Loading repo files")
 	repos, err := repo.LoadRepoFiles(bzlmodopts.repoFiles)
 	if err != nil {
 		return err
 	}
 
-	repoReducer := reducer.NewRepoReducer(repos, bzlmodopts.repoFiles, "", opts.arch, repo.NewCacheHelper())
+	logrus.Debugf("loaded repo files: %+v", repos)
+
+	repoReducer := reducer.NewRepoReducer(repos, []string{}, "", resolvehelperopts.arch, repo.NewCacheHelper())
 
 	logrus.Info("Loading packages.")
 	if err := repoReducer.Load(); err != nil {
@@ -219,14 +207,14 @@ func (opts *BzlmodOpts) RunE(cmd *cobra.Command, rpms []string) error {
 	}
 
 	logrus.Infof("Initial reduction to resolve dependencies for targets %v", rpms)
-	matched, involved, err := repoReducer.Resolve(rpms)
+	matched, involved, err := repoReducer.Resolve(rpms, resolvehelperopts.ignoreMissing)
 	if err != nil {
 		return err
 	}
 
-	solver := sat.NewResolver(opts.nobest)
+	solver := sat.NewResolver(resolvehelperopts.nobest)
 	logrus.Info("Loading involved packages into the rpmtreer.")
-	err = solver.LoadInvolvedPackages(involved, opts.forceIgnoreRegex)
+	err = solver.LoadInvolvedPackages(involved, resolvehelperopts.forceIgnoreRegex, resolvehelperopts.onlyAllowRegex)
 	if err != nil {
 		return err
 	}

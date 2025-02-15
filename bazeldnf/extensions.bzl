@@ -146,8 +146,6 @@ _alias_repository = repository_rule(
     },
 )
 
-_DEFAULT_NAME = "bazeldnf"
-
 def _handle_lock_file(config, module_ctx, registered_rpms = {}):
     if not config.lock_file:
         fail("No lock file provided for %s" % config.name)
@@ -201,7 +199,7 @@ def _handle_lock_file(config, module_ctx, registered_rpms = {}):
 
     return config.name
 
-def _toolchain_extension(module_ctx):
+def _bazeldnf_extension(module_ctx):
     # make sure all our dependencies are registered as those may be needed when those
     # dependening in this repo build the toolchain from sources
     repos = []

@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"bytes"
 	"compress/gzip"
 	"encoding/xml"
 	"errors"
@@ -80,9 +81,10 @@ func (r *CacheHelper) WriteToRepoDir(repo *bazeldnf.Repository, body io.Reader, 
 	return nil
 }
 
-func (r *CacheHelper) OpenFromRepoDir(repo *bazeldnf.Repository, name string) (io.ReadCloser, error) {
+func (r *CacheHelper) OpenFromRepoDir(repo *bazeldnf.Repository, name string) (*os.File, error) {
 	dir := filepath.Join(r.cacheDir, repo.Name)
 	file := filepath.Join(dir, name)
+	logrus.Debugf("opening %s", file)
 	f, err := os.Open(file)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file %s: %v", file, err)
@@ -97,6 +99,22 @@ func (r *CacheHelper) UnmarshalFromRepoDir(repo *bazeldnf.Repository, name strin
 	}
 	defer reader.Close()
 	return xml.NewDecoder(reader).Decode(obj)
+}
+
+func IsGzipCompressed(data []byte) bool {
+	gzipHeaderSize := 10
+
+	if len(data) < gzipHeaderSize {
+		return false
+	}
+
+	gzipHeaderMagicNumber := []byte{0x1f, 0x8b}
+
+	if bytes.Equal(data[:2], gzipHeaderMagicNumber) {
+		return true
+	}
+
+	return false
 }
 
 func (r *CacheHelper) CurrentPrimary(repo *bazeldnf.Repository) (*api.Repository, error) {
@@ -139,8 +157,10 @@ func (r *CacheHelper) CurrentPrimary(repo *bazeldnf.Repository) (*api.Repository
 	if err != nil {
 		return nil, err
 	}
+	logrus.Debugf("decoded")
 
 	if len(repo.Mirrors) == 0 && repo.Metalink != "" {
+		logrus.Debugf("going to load metalink")
 		metalink, err := r.LoadMetaLink(repo)
 		if err == nil {
 			urls := []string{}
@@ -265,10 +285,13 @@ func (r *CacheHelper) CurrentPrimaries(repos *bazeldnf.Repositories, arch string
 			logrus.Infof("Ignoring primary for %s - %s", repo.Name, repo.Arch)
 			continue
 		}
+		logrus.Debugf("loading primary for %+v", repos.Repositories[i])
 		primary, err := r.CurrentPrimary(&repos.Repositories[i])
 		if err != nil {
+			logrus.Debugf("failed to load primary %+v", err)
 			return nil, err
 		}
+		logrus.Debugf("primary loaded")
 		primaries = append(primaries, primary)
 	}
 	return primaries, err
