@@ -1,9 +1,11 @@
 package main
 
 import (
+	"cmp"
 	"encoding/json"
 	"fmt"
 	"os"
+	"regexp"
 
 	"slices"
 
@@ -14,6 +16,7 @@ import (
 	"github.com/rmohr/bazeldnf/pkg/sat"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"golang.org/x/exp/maps"
 )
 
 type BzlmodOpts struct {
@@ -122,8 +125,12 @@ func DumpJSON(result ResolvedResult, targets []string, cmdline []string) ([]byte
 	}
 
 	alreadyInstalled := make(map[string]bool)
-	packageNames := keys(allPackages)
+	packageNames := sortedKeys(allPackages)
 	for _, name := range packageNames {
+		if _, ignored := forceIgnored[name]; ignored {
+			continue
+		}
+
 		requires := allPackages[name].Dependencies
 		deps, err := computeDependencies(requires, providers, forceIgnored)
 		if err != nil {
@@ -150,9 +157,13 @@ func DumpJSON(result ResolvedResult, targets []string, cmdline []string) ([]byte
 		sortedPackages = append(sortedPackages, allPackages[name])
 	}
 
+	ignoredPackages := sortedKeys(forceIgnored)
+
+	slices.Sort(ignoredPackages)
+
 	lockFile := BzlmodLockFile{
 		CommandLineArguments: cmdline,
-		ForceIgnored:         keys(forceIgnored),
+		ForceIgnored:         ignoredPackages,
 		Packages:             sortedPackages,
 		Repositories:         make(map[string][]string),
 	}
@@ -187,7 +198,128 @@ func computeDependencies(requires []string, providers map[string]string, ignored
 		}
 		deps[provider] = true
 	}
-	return keys(deps), nil
+	return sortedKeys(deps), nil
+}
+
+func shouldInclude(target string, ignoreRegex []string) bool {
+	for _, rex := range ignoreRegex {
+		if match, err := regexp.MatchString(rex, target); err != nil {
+			logrus.Errorf("Failed to match package %s with regex '%v': %v", target, rex, err)
+			return false
+		} else if match {
+			logrus.Debugf("will not include %s as it matched %s", target, rex)
+			return false
+		}
+	}
+	logrus.Debugf("including %s", target)
+	return true
+}
+
+func exploreAllDependenciesToExclude(input *api.Package, allPackages map[string]*api.Package, previouslyExplored map[string]bool) []*api.Package {
+	alreadyExplored := make(map[string]*api.Package, 0)
+	pending := []*api.Package{input}
+
+	for len(pending) > 0 {
+		current := pending[0]
+		pending = pending[1:]
+
+		if _, explored := previouslyExplored[current.Name]; explored {
+			logrus.Debugf("previously explored %s", current.Name)
+			continue
+		}
+
+		if _, explored := alreadyExplored[current.Name]; explored {
+			continue
+		}
+
+		alreadyExplored[current.Name] = current
+
+		for _, entry := range current.Format.Requires.Entries {
+			pending = append(pending, allPackages[entry.Name])
+		}
+	}
+
+	output := maps.Values(alreadyExplored)
+	slices.SortStableFunc(output, func(a, b *api.Package) int {
+		return cmp.Compare(a.Name, b.Name)
+	})
+
+	return output
+}
+
+func filterIgnores(rpmsRequested []string, allAvailable []*api.Package, ignoreRegex []string) ([]*api.Package, []*api.Package) {
+	/*
+	 * Given a list of rpmsRequested and a list of ignoreRegex then go through all the resolved rpms
+	 * in allAvailable to install and filter only those needed.
+	 */
+	if len(ignoreRegex) == 0 {
+		return allAvailable, []*api.Package{}
+	}
+
+	allAvailablePerName := make(map[string]*api.Package, 0)
+
+	for _, rpm := range allAvailable {
+		allAvailablePerName[rpm.Name] = rpm
+
+		for _, entry := range rpm.Format.Provides.Entries {
+			allAvailablePerName[entry.Name] = rpm
+		}
+
+		for _, entry := range rpm.Format.Files {
+			allAvailablePerName[entry.Text] = rpm
+		}
+	}
+
+	toInstall := make([]*api.Package, 0)
+	ignored := make(map[string]*api.Package, 0)
+
+	explored := make(map[string]bool, 0)
+	for _, rpm := range rpmsRequested {
+		target, ok := allAvailablePerName[rpm]
+		if !ok {
+			logrus.Errorf("failed to match %s", rpm)
+			continue
+		}
+
+		pending := []*api.Package{target}
+		for len(pending) > 0 {
+			current := pending[0]
+			logrus.Debugf("processing %s", current.Name)
+			pending = pending[1:]
+			if _, alreadyExplored := explored[current.Name]; alreadyExplored {
+				logrus.Debugf("already iterated")
+				continue
+			}
+
+			if !shouldInclude(current.Name, ignoreRegex) {
+				toIgnore := exploreAllDependenciesToExclude(current, allAvailablePerName, explored)
+				for _, d := range toIgnore {
+					logrus.Debugf("excluding %s", d.Name)
+					ignored[d.Name] = d
+					explored[d.Name] = true
+				}
+				continue
+			}
+
+			explored[current.Name] = true
+
+			toInstall = append(toInstall, current)
+			for _, dep := range current.Format.Requires.Entries {
+				logrus.Debugf("finding dependency provider for %s", dep.Name)
+				p, ok := allAvailablePerName[dep.Name]
+				if ok {
+					pending = append(pending, p)
+				}
+			}
+		}
+	}
+
+	ignoredPackages := maps.Values(ignored)
+	slices.SortStableFunc(ignoredPackages, func(a, b *api.Package) int {
+		return cmp.Compare(a.Name, b.Name)
+	})
+
+	return toInstall, ignoredPackages
 }
 
 func (opts *BzlmodOpts) RunE(cmd *cobra.Command, rpms []string) error {
@@ -214,7 +346,7 @@ func (opts *BzlmodOpts) RunE(cmd *cobra.Command, rpms []string) error {
 
 	solver := sat.NewResolver(resolvehelperopts.nobest)
 	logrus.Info("Loading involved packages into the rpmtreer.")
-	err = solver.LoadInvolvedPackages(involved, resolvehelperopts.forceIgnoreRegex, resolvehelperopts.onlyAllowRegex)
+	err = solver.LoadInvolvedPackages(involved, []string{}, resolvehelperopts.onlyAllowRegex)
 	if err != nil {
 		return err
 	}
@@ -226,15 +358,19 @@ func (opts *BzlmodOpts) RunE(cmd *cobra.Command, rpms []string) error {
 	}
 
 	logrus.Info("Solving.")
-	install, _, forceIgnored, err := solver.Resolve()
+	install, _, _, err := solver.Resolve()
 	if err != nil {
 		return err
 	}
 
 	logrus.Debugf("install: %v", install)
+
+	actualInstall, forceIgnored := filterIgnores(rpms, install, resolvehelperopts.forceIgnoreRegex)
+
+	logrus.Debugf("actualInstall: %v", actualInstall)
 	logrus.Debugf("forceIgnored: %v", forceIgnored)
 
-	result := ResolvedResult{Install: install, ForceIgnored: forceIgnored}
+	result := ResolvedResult{Install: actualInstall, ForceIgnored: forceIgnored}
 
 	data, err := DumpJSON(result, rpms, os.Args[2:])
 

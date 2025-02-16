@@ -33,8 +33,18 @@
 		"bash"
 	],
 	"ignored": [
+		"basesystem",
+		"fedora-gpg-keys",
+		"fedora-repos",
 		"filesystem",
+		"generic-release",
+		"generic-release-common",
 		"glibc",
-		"ncurses-libs"
+		"glibc-all-langpacks",
+		"glibc-common",
+		"libgcc",
+		"ncurses-base",
+		"ncurses-libs",
+		"setup"
 	]
 }
