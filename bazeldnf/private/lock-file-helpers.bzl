@@ -19,11 +19,11 @@ def _update_lock_file_impl(ctx):
 
     bzlmod_args = []
     for exclude in ctx.attr.excludes:
-        bzlmod_args.extend(["-i", shell.quote(exclude)])
+        bzlmod_args.extend(["--force-ignore-with-dependencies", shell.quote(exclude)])
     if ctx.attr.rpms:
         bzlmod_args.extend(ctx.attr.rpms)
     if bzlmod_args:
-        bzlmod_args = ["-r", ctx.attr.repofile, "-o", ctx.attr.lock_file] + bzlmod_args
+        bzlmod_args = ["--repofile", ctx.attr.repofile, "--output", ctx.attr.lock_file] + bzlmod_args
 
     if ctx.attr.nobest and "--nobest":
         bzlmod_args.append("--nobest")
