@@ -215,13 +215,15 @@ func shouldInclude(target string, ignoreRegex []string) bool {
 	return true
 }
 
-func exploreAllDependenciesToExclude(input *api.Package, allPackages map[string]*api.Package, previouslyExplored map[string]bool) []*api.Package {
+func exploreAllDependencies(input *api.Package, allPackages map[string]*api.Package, previouslyExplored map[string]bool) []*api.Package {
 	alreadyExplored := make(map[string]*api.Package, 0)
 	pending := []*api.Package{input}
 
 	for len(pending) > 0 {
 		current := pending[0]
 		pending = pending[1:]
+
+		logrus.Debugf("exploring %s", current.Name)
 
 		if _, explored := previouslyExplored[current.Name]; explored {
 			logrus.Debugf("previously explored %s", current.Name)
@@ -235,7 +237,11 @@ func exploreAllDependenciesToExclude(input *api.Package, allPackages map[string]
 		alreadyExplored[current.Name] = current
 
 		for _, entry := range current.Format.Requires.Entries {
-			pending = append(pending, allPackages[entry.Name])
+			t, ok := allPackages[entry.Name]
+			if !ok {
+				continue
+			}
+			pending = append(pending, t)
 		}
 	}
 
@@ -273,6 +279,11 @@ func filterIgnores(rpmsRequested []string, allAvailable []*api.Package, ignoreRe
 	toInstall := make([]*api.Package, 0)
 	ignored := make(map[string]*api.Package, 0)
 
+	requested := map[string]bool{}
+	for _, rpm := range rpmsRequested {
+		requested[rpm] = true
+	}
+
 	explored := make(map[string]bool, 0)
 	for _, rpm := range rpmsRequested {
 		target, ok := allAvailablePerName[rpm]
@@ -292,8 +303,12 @@ func filterIgnores(rpmsRequested []string, allAvailable []*api.Package, ignoreRe
 			}
 
 			if !shouldInclude(current.Name, ignoreRegex) {
-				toIgnore := exploreAllDependenciesToExclude(current, allAvailablePerName, explored)
+				toIgnore := exploreAllDependencies(current, allAvailablePerName, explored)
 				for _, d := range toIgnore {
+					// don't exclude those things that were explicitly requested
+					if _, isRequested := requested[d.Name]; isRequested {
+						continue
+					}
 					logrus.Debugf("excluding %s", d.Name)
 					ignored[d.Name] = d
 					explored[d.Name] = true
@@ -320,6 +335,47 @@ func filterIgnores(rpmsRequested []string, allAvailable []*api.Package, ignoreRe
 	})
 
 	return toInstall, ignoredPackages
+}
+
+func garbageCollect(rpmsRequested []string, toInstall []*api.Package, ignored []*api.Package) ([]*api.Package, []*api.Package) {
+	requested := map[string]bool{}
+	for _, rpm := range rpmsRequested {
+		requested[rpm] = true
+	}
+
+	directDependencies := make(map[string]bool)
+	allPackages := make(map[string]*api.Package, 0)
+	for _, rpm := range toInstall {
+		allPackages[rpm.Name] = rpm
+	}
+
+	emptyMap := make(map[string]bool, 0)
+
+	for _, rpm := range toInstall {
+		if _, isDirectDependency := requested[rpm.Name]; !isDirectDependency {
+			continue
+		}
+		directDependencies[rpm.Name] = true
+		deps := exploreAllDependencies(rpm, allPackages, emptyMap)
+		for _, dep := range deps {
+			if _, available := allPackages[dep.Name]; !available {
+				// this one was filtered out by the ignore regex
+				continue
+			}
+			directDependencies[dep.Name] = true
+		}
+	}
+
+	toKeep := make([]*api.Package, 0)
+	for _, rpm := range toInstall {
+		if _, keep := directDependencies[rpm.Name]; keep {
+			toKeep = append(toKeep, rpm)
+		} else {
+			ignored = append(ignored, rpm)
+		}
+	}
+
+	return toKeep, ignored
 }
 
 func (opts *BzlmodOpts) RunE(cmd *cobra.Command, rpms []string) error {
@@ -366,7 +422,10 @@ func (opts *BzlmodOpts) RunE(cmd *cobra.Command, rpms []string) error {
 	logrus.Debugf("install: %v", install)
 
 	actualInstall, forceIgnored := filterIgnores(rpms, install, resolvehelperopts.forceIgnoreRegex)
+	logrus.Debugf("before GC actual install: %d", len(actualInstall))
+	logrus.Debugf("before GC actual ignored: %d", len(forceIgnored))
 
+	actualInstall, forceIgnored = garbageCollect(rpms, actualInstall, forceIgnored)
 	logrus.Debugf("actualInstall: %v", actualInstall)
 	logrus.Debugf("forceIgnored: %v", forceIgnored)
 
