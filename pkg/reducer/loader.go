@@ -67,7 +67,6 @@ func (r RepoLoader) Load() (*packageInfo, error) {
 		return packageInfo, err
 	}
 	for _, rpmrepo := range cachedRepos {
-		logrus.Debugf("Loading from %+v", rpmrepo)
 		for i, p := range rpmrepo.Packages {
 			if skip(p.Arch, r.architectures) {
 				continue
@@ -75,6 +74,8 @@ func (r RepoLoader) Load() (*packageInfo, error) {
 			packageInfo.packages = append(packageInfo.packages, rpmrepo.Packages[i])
 		}
 	}
+
+	logrus.Debugf("loaded %d packages", len(packageInfo.packages))
 
 	logrus.Debug("going to fix packages")
 

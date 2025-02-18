@@ -3,7 +3,6 @@ package main
 import (
 	"cmp"
 	"encoding/json"
-	"fmt"
 	"os"
 	"regexp"
 
@@ -125,8 +124,7 @@ func DumpJSON(result ResolvedResult, targets []string, cmdline []string) ([]byte
 	}
 
 	alreadyInstalled := make(map[string]bool)
-	packageNames := sortedKeys(allPackages)
-	for _, name := range packageNames {
+	for _, name := range maps.Keys(allPackages) {
 		if _, ignored := forceIgnored[name]; ignored {
 			continue
 		}
@@ -151,6 +149,10 @@ func DumpJSON(result ResolvedResult, targets []string, cmdline []string) ([]byte
 		entry.setDependencies(non_cyclic_deps)
 		allPackages[name] = entry
 	}
+
+	allPackages, forceIgnored = garbageCollect(targets, forceIgnored, allPackages)
+
+	packageNames := sortedKeys(allPackages)
 
 	sortedPackages := make([]InstalledPackage, 0, len(packageNames))
 	for _, name := range packageNames {
@@ -189,7 +191,8 @@ func computeDependencies(requires []string, providers map[string]string, ignored
 		logrus.Debugf("Resolving dependency %s", req)
 		provider, ok := providers[req]
 		if !ok {
-			return nil, fmt.Errorf("could not find provider for %s", req)
+			logrus.Warnf("could not find provider for %s", req)
+			continue
 		}
 		logrus.Debugf("Found provider %s for %s", provider, req)
 		if ignored[provider] {
@@ -223,10 +226,7 @@ func exploreAllDependencies(input *api.Package, allPackages map[string]*api.Pack
 		current := pending[0]
 		pending = pending[1:]
 
-		logrus.Debugf("exploring %s", current.Name)
-
 		if _, explored := previouslyExplored[current.Name]; explored {
-			logrus.Debugf("previously explored %s", current.Name)
 			continue
 		}
 
@@ -295,13 +295,12 @@ func filterIgnores(rpmsRequested []string, allAvailable []*api.Package, ignoreRe
 		pending := []*api.Package{target}
 		for len(pending) > 0 {
 			current := pending[0]
-			logrus.Debugf("processing %s", current.Name)
 			pending = pending[1:]
 			if _, alreadyExplored := explored[current.Name]; alreadyExplored {
-				logrus.Debugf("already iterated")
 				continue
 			}
 
+			logrus.Debugf("processing %s", current.Name)
 			if !shouldInclude(current.Name, ignoreRegex) {
 				toIgnore := exploreAllDependencies(current, allAvailablePerName, explored)
 				for _, d := range toIgnore {
@@ -320,7 +319,6 @@ func filterIgnores(rpmsRequested []string, allAvailable []*api.Package, ignoreRe
 
 			toInstall = append(toInstall, current)
 			for _, dep := range current.Format.Requires.Entries {
-				logrus.Debugf("finding dependency provider for %s", dep.Name)
 				p, ok := allAvailablePerName[dep.Name]
 				if ok {
 					pending = append(pending, p)
@@ -337,45 +335,36 @@ func filterIgnores(rpmsRequested []string, allAvailable []*api.Package, ignoreRe
 	return toInstall, ignoredPackages
 }
 
-func garbageCollect(rpmsRequested []string, toInstall []*api.Package, ignored []*api.Package) ([]*api.Package, []*api.Package) {
-	requested := map[string]bool{}
-	for _, rpm := range rpmsRequested {
-		requested[rpm] = true
-	}
+func garbageCollect(targets []string, forceIgnored map[string]bool, packages map[string]InstalledPackage) (map[string]InstalledPackage, map[string]bool) {
+	reachedPackages := map[string]bool{}
 
-	directDependencies := make(map[string]bool)
-	allPackages := make(map[string]*api.Package, 0)
-	for _, rpm := range toInstall {
-		allPackages[rpm.Name] = rpm
-	}
-
-	emptyMap := make(map[string]bool, 0)
-
-	for _, rpm := range toInstall {
-		if _, isDirectDependency := requested[rpm.Name]; !isDirectDependency {
-			continue
-		}
-		directDependencies[rpm.Name] = true
-		deps := exploreAllDependencies(rpm, allPackages, emptyMap)
-		for _, dep := range deps {
-			if _, available := allPackages[dep.Name]; !available {
-				// this one was filtered out by the ignore regex
-				continue
-			}
-			directDependencies[dep.Name] = true
+	for _, target := range targets {
+		reachedPackages[target] = true
+		for _, dep := range packages[target].Dependencies {
+			reachedPackages[dep] = true
 		}
 	}
 
-	toKeep := make([]*api.Package, 0)
-	for _, rpm := range toInstall {
-		if _, keep := directDependencies[rpm.Name]; keep {
-			toKeep = append(toKeep, rpm)
-		} else {
-			ignored = append(ignored, rpm)
+	for _, pkg := range packages {
+		if _, isReached := reachedPackages[pkg.Name]; !isReached {
+			forceIgnored[pkg.Name] = true
 		}
 	}
 
-	return toKeep, ignored
+	for pkg, _ := range forceIgnored {
+		delete(packages, pkg)
+	}
+
+	return packages, forceIgnored
+}
+
+func packageNames(packages []*api.Package) []string {
+	output := make([]string, 0)
+	for _, p := range packages {
+		output = append(output, p.Name)
+	}
+	slices.Sort(output)
+	return output
 }
 
 func (opts *BzlmodOpts) RunE(cmd *cobra.Command, rpms []string) error {
@@ -401,13 +390,13 @@ func (opts *BzlmodOpts) RunE(cmd *cobra.Command, rpms []string) error {
 	}
 
 	solver := sat.NewResolver(resolvehelperopts.nobest)
-	logrus.Info("Loading involved packages into the rpmtreer.")
+	logrus.Infof("Loading involved packages into the rpmtreer: %d", len(involved))
 	err = solver.LoadInvolvedPackages(involved, []string{}, resolvehelperopts.onlyAllowRegex)
 	if err != nil {
 		return err
 	}
 
-	logrus.Info("Adding required packages to the rpmtreer.")
+	logrus.Infof("Adding required packages to the rpmtreer: %d", len(matched))
 	err = solver.ConstructRequirements(matched)
 	if err != nil {
 		return err
@@ -419,15 +408,11 @@ func (opts *BzlmodOpts) RunE(cmd *cobra.Command, rpms []string) error {
 		return err
 	}
 
-	logrus.Debugf("install: %v", install)
+	logrus.Debugf("resolver install: %v", install)
 
 	actualInstall, forceIgnored := filterIgnores(rpms, install, resolvehelperopts.forceIgnoreRegex)
-	logrus.Debugf("before GC actual install: %d", len(actualInstall))
-	logrus.Debugf("before GC actual ignored: %d", len(forceIgnored))
-
-	actualInstall, forceIgnored = garbageCollect(rpms, actualInstall, forceIgnored)
-	logrus.Debugf("actualInstall: %v", actualInstall)
-	logrus.Debugf("forceIgnored: %v", forceIgnored)
+	logrus.Debugf("before GC actual install(%d): %+v", len(actualInstall), packageNames(actualInstall))
+	logrus.Debugf("before GC actual ignored(%d): %+v", len(forceIgnored), packageNames(forceIgnored))
 
 	result := ResolvedResult{Install: actualInstall, ForceIgnored: forceIgnored}
 
