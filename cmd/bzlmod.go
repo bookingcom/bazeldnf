@@ -124,7 +124,7 @@ func DumpJSON(result ResolvedResult, targets []string, cmdline []string) ([]byte
 	}
 
 	alreadyInstalled := make(map[string]bool)
-	for _, name := range maps.Keys(allPackages) {
+	for _, name := range sortedKeys(allPackages) {
 		if _, ignored := forceIgnored[name]; ignored {
 			continue
 		}
