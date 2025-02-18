@@ -338,11 +338,13 @@ func filterIgnores(rpmsRequested []string, allAvailable []*api.Package, ignoreRe
 func garbageCollect(targets []string, forceIgnored map[string]bool, packages map[string]InstalledPackage) (map[string]InstalledPackage, map[string]bool) {
 	reachedPackages := map[string]bool{}
 
-	for _, target := range targets {
+	pending := make([]string, len(targets))
+	copy(pending, targets)
+	for len(pending) > 0 {
+		target := pending[0]
+		pending = pending[1:]
 		reachedPackages[target] = true
-		for _, dep := range packages[target].Dependencies {
-			reachedPackages[dep] = true
-		}
+		pending = append(pending, packages[target].Dependencies...)
 	}
 
 	for _, pkg := range packages {
