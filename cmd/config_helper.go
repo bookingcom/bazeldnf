@@ -59,6 +59,8 @@ func toConfig(install, forceIgnored []*api.Package, targets []string, cmdline []
 		sortedPackages = append(sortedPackages, pkg)
 	}
 
+	sortedPackages = removeCyclicDependencies(targets, sortedPackages)
+
 	lockFile := bazeldnf.Config{
 		CommandLineArguments: cmdline,
 		ForceIgnored:         sortedKeys(ignored),
@@ -107,20 +109,63 @@ func collectDependencies(pkg string, requires []string, providers map[string]str
 		depSet[provider] = true
 	}
 
-	deps := keys(depSet)
+	return sortedKeys(depSet), nil
+}
 
-	found := map[string]bool{pkg: true}
+func removeCyclicDependencies(targets []string, allPackages []*bazeldnf.RPM) []*bazeldnf.RPM {
+	allPackagesMap := make(map[string]*bazeldnf.RPM)
 
-	// RPMs may have circular dependencies, even depend on themselves.
-	// we need to ignore such dependencies
-	nonCyclicDeps := make([]string, 0, len(deps))
-	for _, dep := range deps {
-		if found[dep] {
-			continue
-		}
-
-		nonCyclicDeps = append(nonCyclicDeps, dep)
+	for _, installPackage := range allPackages {
+		allPackagesMap[installPackage.Name] = installPackage
 	}
 
-	return nonCyclicDeps, nil
+	visitedMap := make(map[string]bool)
+	recursionStack := make(map[string]bool)
+
+	for _, target := range targets {
+		if _, visited := visitedMap[target]; !visited {
+			removeCyclicDependenciesHelper(allPackagesMap, target, visitedMap, recursionStack)
+		}
+	}
+
+	return allPackages
+}
+
+func removeCyclicDependenciesHelper(allPackages map[string]*bazeldnf.RPM, pkg string, visitedMap, recursionStack map[string]bool) bool {
+	/*
+	 * This is a recursive function that removes cyclic dependencies from the
+	 * dependency graph in the case cycles are found
+	 */
+	visitedMap[pkg] = true
+	recursionStack[pkg] = true
+
+	if _, ok := allPackages[pkg]; !ok {
+		return false
+	}
+
+	if allPackages[pkg].Dependencies == nil {
+		return false
+	}
+
+	cleanDependencies := make([]string, 0, len(allPackages[pkg].Dependencies))
+
+	for _, dep := range allPackages[pkg].Dependencies {
+		if _, visited := visitedMap[dep]; !visited {
+			if removeCyclicDependenciesHelper(allPackages, dep, visitedMap, recursionStack) {
+				// ignore cycle
+				logrus.Debugf("Ignoring cyclic dependency %s -> %s", pkg, dep)
+				continue
+			}
+		} else if _, recursed := recursionStack[dep]; recursed {
+			// ignore cycle
+			logrus.Debugf("Ignoring cyclic dependency in recursion stack %s -> %s", pkg, dep)
+			continue
+		}
+		cleanDependencies = append(cleanDependencies, dep)
+	}
+
+	recursionStack[pkg] = false
+	allPackages[pkg].SetDependencies(cleanDependencies)
+
+	return false
 }
