@@ -56,6 +56,17 @@ def _rpm2tar_impl(ctx):
             if rpm not in all_rpms:
                 all_rpms.append(rpm)
 
+    to_delete = []
+
+    for ignore_rpm in ctx.attr.ignore_rpms:
+        for rpm in all_rpms:
+            if rpm.basename.startswith(ignore_rpm):
+                to_delete.append(rpm)
+                break
+
+    for rpm in to_delete:
+        all_rpms.remove(rpm)
+
     for rpm in all_rpms:
         args.add_all(["--input", rpm.path])
 
@@ -96,6 +107,7 @@ _rpm2tar_attrs = {
     "capabilities": attr.string_list_dict(),
     "selinux_labels": attr.string_list_dict(),
     "out": attr.output(mandatory = True),
+    "ignore_rpms": attr.string_list(default = []),
 }
 
 _tar2files_attrs = {
