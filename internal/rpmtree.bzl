@@ -78,6 +78,7 @@ def _rpm2tar_impl(ctx):
         mnemonic = "Rpm2Tar",
         progress_message = "Converting %s to tar" % ctx.label.name,
         executable = ctx.toolchains[BAZELDNF_TOOLCHAIN]._tool,
+        toolchain = BAZELDNF_TOOLCHAIN,
     )
 
     return [DefaultInfo(files = depset([ctx.outputs.out]))]
@@ -113,6 +114,7 @@ def _tar2files_impl(ctx):
         mnemonic = "Tar2Files",
         progress_message = "Extracting files",
         executable = ctx.toolchains[BAZELDNF_TOOLCHAIN]._tool,
+        toolchain = BAZELDNF_TOOLCHAIN,
     )
 
     return [DefaultInfo(files = depset(ctx.outputs.out))]
