@@ -27,7 +27,7 @@ bazeldnf.config(
     nobest = True,
     repofile = "//:repo.yaml",
     rpms = [
-        "libvirt-devel",
+        "libvirt-libs",
     ],
 )
 bazeldnf.config(
