@@ -26,6 +26,7 @@ bazeldnf.config(
     repofile = "//:repos.yaml",
     rpm_repository_prefix = "x86-64",
     rpms = [
+        "bash",
         "git",
         "glibc",
     ],
