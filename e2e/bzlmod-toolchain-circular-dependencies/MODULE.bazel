@@ -24,6 +24,7 @@ bazeldnf.config(
     ignore_deps = False,
     lock_file = "//:bazeldnf-lock.json",
     repofile = "//:repos.yaml",
+    rpm_repository_prefix = "x86-64",
     rpms = [
         "git",
         "glibc",
