@@ -38,6 +38,47 @@ def bazeldnf_dependencies():
         ],
         sha256 = "218efe8ee736d26a3572663b374a253c012b716d8af0c07e842e82f238a0a7ee",
     )
+    http_archive(
+        name = "tar.bzl",
+        sha256 = "8bac5a2b43f9988e4e69bb03a242b9cbed2c53f9cd4c989f879aaa441bda03f4",
+        strip_prefix = "tar.bzl-0.8.1",
+        url = "https://github.com/bazel-contrib/tar.bzl/releases/download/v0.8.1/tar.bzl-v0.8.1.tar.gz",
+    )
+    http_archive(
+        name = "aspect_bazel_lib",
+        sha256 = "db7da732db4dece80cd6d368220930950c9306ff356ebba46498fe64e65a3945",
+        strip_prefix = "bazel-lib-2.19.3",
+        url = "https://github.com/bazel-contrib/bazel-lib/releases/download/v2.19.3/bazel-lib-v2.19.3.tar.gz",
+    )
+
+    http_archive(
+        name = "bazel_lib",
+        sha256 = "6fd3b1e1a38ca744f9664be4627ced80895c7d2ee353891c172f1ab61309c933",
+        strip_prefix = "bazel-lib-3.0.0",
+        url = "https://github.com/bazel-contrib/bazel-lib/releases/download/v3.0.0/bazel-lib-v3.0.0.tar.gz",
+    )
+
+    # Back-port https://github.com/bazelbuild/bazel-central-registry/blob/main/modules/gawk/5.3.2.bcr.1/source.json
+    # to WORKSPACE semantics
+    http_archive(
+        name = "gawk",
+        integrity = "sha256-+MNIZQnecFGSE4sA7ywAu73Q6Eww1cB9I/xzqdxMycw=",
+        remote_file_integrity = {
+            "BUILD.bazel": "sha256-dt89+9IJ3UzQvoKzyXOiBoF6ok/4u4G0cb0Ja+plFy0=",
+            "posix/config_darwin.h": "sha256-gPVRlvtdXPw4Ikwd5S89wPPw5AaiB2HTHa1KOtj40mU=",
+            "posix/config_linux.h": "sha256-iEaeXYBUCvprsIEEi5ipwqt0JV8d73+rLgoBYTegC6Q=",
+        },
+        remote_file_urls = {
+            f: ["https://raw.githubusercontent.com/bazelbuild/bazel-central-registry/refs/heads/main/modules/gawk/5.3.2.bcr.1/overlay/" + f]
+            for f in [
+                "BUILD.bazel",
+                "posix/config_darwin.h",
+                "posix/config_linux.h",
+            ]
+        },
+        strip_prefix = "gawk-5.3.2",
+        urls = ["https://ftpmirror.gnu.org/gnu/gawk/gawk-5.3.2.tar.xz"],
+    )
 
 ########
 # Remaining content of the file is only used to support toolchains.

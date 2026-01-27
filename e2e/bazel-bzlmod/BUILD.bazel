@@ -1,4 +1,4 @@
-load("@bazeldnf//bazeldnf:defs.bzl", "bazeldnf", "rpmtree", "tar2files")
+load("@bazeldnf//bazeldnf:defs.bzl", "bazeldnf", "rpmtree", "tar2dir", "tar2files")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
@@ -24,6 +24,22 @@ tar2files(
             "libvirt.so.0.11000.0",
         ],
     },
+    tar = ":something",
+    visibility = ["//visibility:public"],
+)
+
+tar2dir(
+    name = "something_dir",
+    paths = [
+        "usr/lib64",
+        "usr/include",
+    ],
+    tar = ":something",
+    visibility = ["//visibility:public"],
+)
+
+tar2dir(
+    name = "something_dir_all",
     tar = ":something",
     visibility = ["//visibility:public"],
 )
