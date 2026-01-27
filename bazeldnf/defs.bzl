@@ -13,6 +13,7 @@ load(
 load(
     "//internal:rpmtree.bzl",
     _rpmtree = "rpmtree",
+    _tar2dir = "tar2dir",
     _tar2files = "tar2files",
 )
 load(
@@ -23,5 +24,6 @@ load(
 bazeldnf = _bazeldnf
 rpm = _rpm
 rpmtree = _rpmtree
+tar2dir = _tar2dir
 tar2files = _tar2files
 xattrs = _xattrs

@@ -14,7 +14,7 @@
 
 """Provide helpers to convert rpm files into a single tar file
 
-This file exposes rpmtree and tar2files to convert a group of
+This file exposes rpmtree, tar2files, and tar2dir to convert a group of
 rpm files into either a .tar or extract files from that tar to
 make available to bazel
 """
@@ -22,6 +22,8 @@ make available to bazel
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("//bazeldnf:toolchain.bzl", "BAZELDNF_TOOLCHAIN")
 load("//internal:rpm.bzl", "RpmInfo")
+
+TAR_TOOLCHAIN_TYPE = "@tar.bzl//tar/toolchain:type"
 
 def _rpm2tar_impl(ctx):
     args = ctx.actions.args()
@@ -163,3 +165,66 @@ def tar2files(name, files = None, **kwargs):
             out = files,
             **kwargs
         )
+
+def _tar2dir_impl(ctx):
+    output_dir = ctx.actions.declare_directory(ctx.attr.name)
+    tar_toolchain = ctx.toolchains[TAR_TOOLCHAIN_TYPE]
+    tar_binary = tar_toolchain.tarinfo.binary
+
+    args = ctx.actions.args()
+    args.add("-xUf", ctx.file.tar)
+    if not ctx.attr.path:
+        args.add("-C", output_dir.path)
+    else:
+        args.add("-C", output_dir.path.split(ctx.attr.path)[0])
+
+    ctx.actions.run(
+        inputs = [ctx.file.tar],
+        outputs = [output_dir],
+        executable = tar_binary,
+        arguments = [args],
+        mnemonic = "Tar2Dir",
+        progress_message = "Extracting tar to directory %{label}",
+    )
+
+    return [DefaultInfo(files = depset([output_dir]))]
+
+_tar2dir_attrs = {
+    "tar": attr.label(allow_single_file = True, mandatory = True),
+    "path": attr.string(
+        doc = "Path to extract from the tar (e.g., 'usr/lib64'). If empty, extracts everything.",
+    ),
+}
+
+_tar2dir = rule(
+    implementation = _tar2dir_impl,
+    attrs = _tar2dir_attrs,
+    toolchains = [TAR_TOOLCHAIN_TYPE],
+)
+
+def tar2dir(name, paths = [], **kwargs):
+    """Extracts paths from a tar file into a directory (tree artifact).
+
+    This rule extracts files from a tar archive into a Bazel tree artifact,
+    without requiring the user to know the file list upfront.
+
+    Args:
+        name: Name of the rule, also used as the output directory name.
+        paths: Paths to extract from the tar (e.g., ['usr/lib64', 'usr/include']). If empty, extracts everything.
+        **kwargs: Additional arguments passed to the underlying rule (tar, paths).
+    """
+    if not paths:
+        _tar2dir(name = name, path = None, **kwargs)
+        return
+
+    targets = []
+    for path in paths:
+        target_name = "{}/{}".format(name, path)
+        _tar2dir(name = target_name, path = path, **kwargs)
+        targets.append(":{}".format(target_name))
+
+    native.filegroup(
+        name = name,
+        srcs = targets,
+        visibility = kwargs.get("visibility"),
+    )
