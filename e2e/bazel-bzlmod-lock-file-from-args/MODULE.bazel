@@ -57,6 +57,7 @@ bazeldnf.config(
     repofile = "//:repo.yaml",
     rpms = [
         "bash",
+        "libzstd",  # we exclude it from `update-repo` only directly in the `repo.yaml` file
     ],
 )
 use_repo(

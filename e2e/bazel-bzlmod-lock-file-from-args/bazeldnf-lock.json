@@ -23,6 +23,9 @@
 		"--force-ignore-with-dependencies",
 		"fedora-release-common",
 		"bash",
+		"libzstd",
+		"--arch",
+		"x86_64",
 		"--ignore-missing"
 	],
 	"name": "",
@@ -42,6 +45,7 @@
 	},
 	"rpms": [
 		{
+			"id": "bash",
 			"name": "bash",
 			"integrity": "sha256-FW4HMwjLKKWmmdb/r8ccvShIdij9BUceGXjkuaXHqAI=",
 			"urls": [
@@ -53,6 +57,7 @@
 			]
 		},
 		{
+			"id": "fedora-release-container",
 			"name": "fedora-release-container",
 			"integrity": "sha256-TQccXscGmgySaJ6kKutIHmgswOLfYSYNcDwqNRu8Q88=",
 			"urls": [
@@ -62,6 +67,17 @@
 			"dependencies": []
 		},
 		{
+			"id": "libzstd",
+			"name": "libzstd",
+			"integrity": "sha256-DexKXDxNK3WagIMiWY+7jjpVt/vjcVR/rtjiXLU+XoU=",
+			"urls": [
+				"Packages/l/libzstd-1.5.5-5.fc40.x86_64.rpm"
+			],
+			"repository": "40-x86_64-primary-repo",
+			"dependencies": []
+		},
+		{
+			"id": "ncurses-base",
 			"name": "ncurses-base",
 			"integrity": "sha256-ipM3bOdCO9GmSaE/S1EF8nC0YD9c87PiML29p/Jd14g=",
 			"urls": [
@@ -71,6 +87,7 @@
 			"dependencies": []
 		},
 		{
+			"id": "ncurses-libs",
 			"name": "ncurses-libs",
 			"integrity": "sha256-oY7fMuia79RTmY1dDsOqHqGT2sQ/gLmdsZWr1+jPGgQ=",
 			"urls": [
@@ -83,7 +100,8 @@
 		}
 	],
 	"targets": [
-		"bash"
+		"bash",
+		"libzstd"
 	],
 	"ignored": [
 		"fedora-release-common",
