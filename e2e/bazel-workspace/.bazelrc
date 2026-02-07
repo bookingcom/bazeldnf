@@ -1,7 +1,9 @@
-import %workspace%/../../tools/preset.bazelrc
+common --enable_bzlmod
 
 # Allows tests to run bazelisk-in-bazel, since this is the cache folder used
 common:ci --test_env=XDG_CACHE_HOME
+
+import %workspace%/presets.bazelrc
 
 # Specific project flags go here if we have some
 
