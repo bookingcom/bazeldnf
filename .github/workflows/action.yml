@@ -28,8 +28,10 @@ jobs:
         repository-cache: true
         # enable some flags for CI
         bazelrc: |
-          import %workspace%/.aspect/bazelrc/ci.bazelrc
-          import %workspace%/.github/workflows/ci.bazelrc
+          try-import %workspace%/.aspect/bazelrc/ci.bazelrc
+          try-import %workspace%/.github/workflows/ci.bazelrc
+          try-import %workspace%/../../.aspect/bazelrc/ci.bazelrc
+          try-import %workspace%/../../.github/workflows/ci.bazelrc
         # keep a cache for MODULE.bazel repos
         external-cache: true
     - run: bazelisk build //... && bazelisk test //...
