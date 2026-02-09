@@ -19,7 +19,7 @@ BZLMOD_BAZEL_VERSIONS = [
 
 default_test_runner(
     name = "test-runner",
-    bazel_cmds = ["build //..."],
+    bazel_cmds = ["build --extra_toolchains=@bazeldnf//tools/e2e/output:toolchain //..."],
 )
 
 # bazel-workspace: legacy WORKSPACE mode (Bazel 6.x, 7.x)

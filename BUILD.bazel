@@ -116,6 +116,7 @@ filegroup(
         "//bazeldnf/private:all_files",
         "//internal:all_files",
         "//tools:all_files",
+        "//tools/e2e:toolchain",
     ],
     visibility = [
         "//e2e:__subpackages__",
