@@ -101,16 +101,9 @@ bzl_library(
 # local_path_override(path = "../..") can resolve the full module.
 filegroup(
     name = "local_repository_files",
-    srcs = glob(
-        [
-            "*",
-            ".*",
-        ],
-        exclude = [
-            "MODULE.bazel.lock",
-            "REPO.bazel",
-        ],
-    ) + [
+    srcs = [
+        "MODULE.bazel",
+        "WORKSPACE",
         "//.aspect/bazelrc:all_files",
         "//bazeldnf:all_files",
         "//bazeldnf/private:all_files",

@@ -6,6 +6,7 @@ load(
     "default_test_runner",
     "integration_test_utils",
 )
+load("helpers.bzl", "glob_workspace_files")
 
 WORKSPACE_BAZEL_VERSIONS = [
     "6.5.0",
@@ -28,8 +29,12 @@ bazel_integration_tests(
     timeout = "short",
     bazel_binaries = bazel_binaries,
     bazel_versions = WORKSPACE_BAZEL_VERSIONS,
+    tags = ["manual"],
     test_runner = ":test-runner",
-    workspace_files = integration_test_utils.glob_workspace_files("bazel-workspace") + [
+    workspace_files = glob_workspace_files(
+        "bazel-workspace",
+        extra_excludes = ["*/*.json"],
+    ) + [
         "//:local_repository_files",
     ],
     workspace_path = "bazel-workspace",
@@ -41,8 +46,12 @@ bazel_integration_tests(
     timeout = "short",
     bazel_binaries = bazel_binaries,
     bazel_versions = BZLMOD_BAZEL_VERSIONS,
+    tags = ["manual"],
     test_runner = ":test-runner",
-    workspace_files = integration_test_utils.glob_workspace_files("bazel-bzlmod") + [
+    workspace_files = glob_workspace_files(
+        "bazel-bzlmod",
+        extra_excludes = ["*/*.json"],
+    ) + [
         "//:local_repository_files",
     ],
     workspace_path = "bazel-bzlmod",
@@ -54,8 +63,9 @@ bazel_integration_tests(
     timeout = "short",
     bazel_binaries = bazel_binaries,
     bazel_versions = BZLMOD_BAZEL_VERSIONS,
+    tags = ["manual"],
     test_runner = ":test-runner",
-    workspace_files = integration_test_utils.glob_workspace_files("bazel-bzlmod-lock-file") + [
+    workspace_files = glob_workspace_files("bazel-bzlmod-lock-file") + [
         "//:local_repository_files",
     ],
     workspace_path = "bazel-bzlmod-lock-file",
@@ -67,8 +77,12 @@ bazel_integration_tests(
     timeout = "short",
     bazel_binaries = bazel_binaries,
     bazel_versions = BZLMOD_BAZEL_VERSIONS,
+    tags = ["manual"],
     test_runner = ":test-runner",
-    workspace_files = integration_test_utils.glob_workspace_files("bazel-bzlmod-toolchain-from-source") + [
+    workspace_files = glob_workspace_files(
+        "bazel-bzlmod-toolchain-from-source",
+        extra_excludes = ["*/*.json"],
+    ) + [
         "//:local_repository_files",
     ],
     workspace_path = "bazel-bzlmod-toolchain-from-source",
@@ -80,8 +94,12 @@ bazel_integration_tests(
     timeout = "short",
     bazel_binaries = bazel_binaries,
     bazel_versions = BZLMOD_BAZEL_VERSIONS,
+    tags = ["manual"],
     test_runner = ":test-runner",
-    workspace_files = integration_test_utils.glob_workspace_files("bazel-bzlmod-toolchain-from-source-lock-file") + [
+    workspace_files = glob_workspace_files(
+        "bazel-bzlmod-toolchain-from-source-lock-file",
+        extra_excludes = ["*/*.json"],
+    ) + [
         "//:local_repository_files",
     ],
     workspace_path = "bazel-bzlmod-toolchain-from-source-lock-file",
@@ -101,8 +119,9 @@ bazel_integration_tests(
     timeout = "short",
     bazel_binaries = bazel_binaries,
     bazel_versions = BZLMOD_BAZEL_VERSIONS,
+    tags = ["manual"],
     test_runner = ":lock-file-from-args-runner",
-    workspace_files = integration_test_utils.glob_workspace_files("bazel-bzlmod-lock-file-from-args") + [
+    workspace_files = glob_workspace_files("bazel-bzlmod-lock-file-from-args") + [
         "//:local_repository_files",
     ],
     workspace_path = "bazel-bzlmod-lock-file-from-args",
@@ -122,9 +141,15 @@ bazel_integration_tests(
     timeout = "short",
     bazel_binaries = bazel_binaries,
     bazel_versions = BZLMOD_BAZEL_VERSIONS,
-    tags = ALLOWED_TO_FAIL_TAGS,  # TODO: drop once the circular dependencies passes
+    tags = [
+        "allowed-to-fail",  # TODO: drop once the circular dependencies passes
+        "manual",
+    ],
     test_runner = ":test-runner_circular_deps",
-    workspace_files = integration_test_utils.glob_workspace_files("bzlmod-toolchain-circular-dependencies") + [
+    workspace_files = glob_workspace_files(
+        "bzlmod-toolchain-circular-dependencies",
+        extra_excludes = ["*/*.json"],
+    ) + [
         "//:local_repository_files",
     ],
     workspace_path = "bzlmod-toolchain-circular-dependencies",
@@ -132,6 +157,7 @@ bazel_integration_tests(
 
 test_suite(
     name = "workspace",
+    tags = ["manual"],
     tests = integration_test_utils.bazel_integration_test_names(
         "e2e_workspace",
         WORKSPACE_BAZEL_VERSIONS,
@@ -140,6 +166,7 @@ test_suite(
 
 test_suite(
     name = "bzlmod",
+    tags = ["manual"],
     tests = integration_test_utils.bazel_integration_test_names(
         "e2e_bzlmod",
         BZLMOD_BAZEL_VERSIONS,
@@ -148,6 +175,7 @@ test_suite(
 
 test_suite(
     name = "bzlmod-lock-file",
+    tags = ["manual"],
     tests = integration_test_utils.bazel_integration_test_names(
         "e2e_bzlmod_lock_file",
         BZLMOD_BAZEL_VERSIONS,
@@ -156,6 +184,7 @@ test_suite(
 
 test_suite(
     name = "bzlmod-toolchain-from-source",
+    tags = ["manual"],
     tests = integration_test_utils.bazel_integration_test_names(
         "e2e_bzlmod_toolchain_from_source",
         BZLMOD_BAZEL_VERSIONS,
@@ -164,7 +193,10 @@ test_suite(
 
 test_suite(
     name = "circular-deps",
-    tags = ALLOWED_TO_FAIL_TAGS,  # TODO: drop once the circular dependencies passes
+    tags = [
+        "allowed-to-fail",  # TODO: drop once the circular dependencies passes
+        "manual",
+    ],
     tests = integration_test_utils.bazel_integration_test_names(
         "e2e_circular_deps",
         BZLMOD_BAZEL_VERSIONS,
@@ -173,6 +205,7 @@ test_suite(
 
 test_suite(
     name = "lock-file-from-args",
+    tags = ["manual"],
     tests = integration_test_utils.bazel_integration_test_names(
         "e2e_lock_file_from_args",
         BZLMOD_BAZEL_VERSIONS,
@@ -181,6 +214,7 @@ test_suite(
 
 test_suite(
     name = "e2e",
+    tags = ["manual"],
     tests = [
         ":workspace",
         ":bzlmod",
