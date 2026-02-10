@@ -424,27 +424,3 @@ bazeldnf = module_extension(
         "config": _config_tag,
     },
 )
-
-def _protobuf_java_extension(module_ctx):
-    http_jar(
-        name = "protobuf-java",
-        integrity = "sha256-0C+GOpCj/8d9Xu7AMcGOV58wx8uY8/OoFP6LiMQ9O8g=",
-        urls = ["https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/4.27.3/protobuf-java-4.27.3.jar"],
-    )
-
-    kwargs = {}
-    if bazel_features.external_deps.extension_metadata_has_reproducible:
-        kwargs["reproducible"] = True
-
-    if module_ctx.root_module_has_non_dev_dependency:
-        kwargs["root_module_direct_deps"] = []
-        kwargs["root_module_direct_dev_deps"] = ["protobuf-java"]
-    else:
-        kwargs["root_module_direct_deps"] = []
-        kwargs["root_module_direct_dev_deps"] = ["protobuf-java"]
-
-    return module_ctx.extension_metadata(**kwargs)
-
-protobuf_java = module_extension(
-    implementation = _protobuf_java_extension,
-)
