@@ -6,7 +6,9 @@ import %workspace%/.aspect/bazelrc/debug.bazelrc
 import %workspace%/.aspect/bazelrc/performance.bazelrc
 
 # Prevent Bazel from treating e2e child workspace BUILD files as packages
-common --deleted_packages=e2e/bazel-workspace,e2e/bazel-bzlmod,e2e/bazel-bzlmod-lock-file,e2e/bazel-bzlmod-lock-file-from-args,e2e/bazel-bzlmod-toolchain-from-source,e2e/bazel-bzlmod-toolchain-from-source-lock-file,e2e/bzlmod-toolchain-circular-dependencies
+# When adding a new e2e test then `bazel run @rules_bazel_integration_test//tools:update_deleted_packages`
+# needs to be executed
+common --deleted_packages=e2e/bazel-bzlmod,e2e/bazel-bzlmod-lock-file,e2e/bazel-bzlmod-lock-file-from-args,e2e/bazel-bzlmod-toolchain-from-source,e2e/bazel-bzlmod-toolchain-from-source-lock-file,e2e/bazel-workspace,e2e/bzlmod-toolchain-circular-dependencies,e2e/repo-yaml
 
 # Specific project flags go here if we have some
 

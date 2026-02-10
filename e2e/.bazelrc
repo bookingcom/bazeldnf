@@ -1,0 +1,16 @@
+# if running in GitHub actions with setup-bazel then we need to ignore output_base
+# our workflow creates this clean bazelrc file for us
+try-import ~/.bazelrc.clean
+
+# make sure all our tests use the prebuilt toolchain
+common --extra_toolchains=@bazeldnf//tools/e2e/output:toolchain
+
+# try to speed up our tests
+common --sandbox_add_mount_pair=~/.cache/bazel
+common --sandbox_add_mount_pair=~/.cache/bazelisk
+
+# Include most of the suggested flags from aspect
+import %workspace%/../../.aspect/bazelrc/convenience.bazelrc
+import %workspace%/../../.aspect/bazelrc/correctness.bazelrc
+import %workspace%/../../.aspect/bazelrc/debug.bazelrc
+import %workspace%/../../.aspect/bazelrc/performance.bazelrc

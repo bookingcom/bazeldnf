@@ -27,3 +27,7 @@ e2e/bzlmod-toolchain-circular-dependencies/bazel-bin
 e2e/bzlmod-toolchain-circular-dependencies/bazel-out
 e2e/bzlmod-toolchain-circular-dependencies/bazel-bzlmod-toolchain-circular-dependencies
 e2e/bzlmod-toolchain-circular-dependencies/bazel-testlogs
+e2e/repo-yaml/bazel-bin
+e2e/repo-yaml/bazel-out
+e2e/repo-yaml/bazel-repo-yaml
+e2e/repo-yaml/bazel-testlogs
