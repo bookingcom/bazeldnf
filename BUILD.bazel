@@ -104,6 +104,7 @@ filegroup(
     srcs = [
         "MODULE.bazel",
         "WORKSPACE",
+        "//:.github/workflows/ci.bazelrc",
         "//.aspect/bazelrc:all_files",
         "//bazeldnf:all_files",
         "//bazeldnf/private:all_files",
