@@ -35,16 +35,21 @@ jobs:
         # keep a cache for MODULE.bazel repos
         external-cache: true
     - id: build
+      name: building repository
       run: bazelisk build //...
     - id: unit-tests
+      name: running unit tests
       run: bazelisk test //...
     - id: prepare-e2e-runner
+      name: preparing for e2e
       # workaround for https://github.com/bazel-contrib/setup-bazel/issues/108
       # together with our customized default_test_runner
       run: cat ~/.bazelrc | grep -v output_base > ~/.bazelrc.clean
     - id: e2e-that-should-pass
+      name: running mandatory e2e tests
       run: bazelisk test e2e --notest_keep_going
     - id: e2e-that-are-allowed-to-fail
+      name: running e2e tests that are allowed to fail
       run: |
         ret_code=0
         bazel test //e2e --notest_keep_going --test_tag_filters=allowed-to-fail || ret_code=$?
