@@ -38,6 +38,12 @@ def bazeldnf_dependencies():
         ],
         sha256 = "218efe8ee736d26a3572663b374a253c012b716d8af0c07e842e82f238a0a7ee",
     )
+    http_archive(
+        name = "bazel_lib",
+        sha256 = "e733937de2f542436c5d3d618e22c638489b40dfd251284050357babe71103d7",
+        strip_prefix = "bazel-lib-3.2.0",
+        url = "https://github.com/bazel-contrib/bazel-lib/releases/download/v3.2.0/bazel-lib-v3.2.0.tar.gz",
+    )
 
 ########
 # Remaining content of the file is only used to support toolchains.
@@ -77,7 +83,9 @@ def bazeldnf_register_toolchains(name, register = True, **kwargs):
     - TODO: create a convenience repository for the host platform like "bazeldnf_host"
     - create a repository exposing toolchains for each platform like "bazeldnf_platforms"
     - register a toolchain pointing at each platform
+
     Users can avoid this macro and do these steps themselves, if they want more control.
+
     Args:
         name: base name for all created repos, like "bazeldnf1_14"
         register: whether to call through to native.register_toolchains.
