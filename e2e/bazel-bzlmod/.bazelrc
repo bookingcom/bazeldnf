@@ -2,7 +2,7 @@
 import %workspace%/../../.aspect/bazelrc/bazel7.bazelrc
 
 # Include our e2e shared config
-import %workspace%/../.bazelrc
+try-import %workspace%/../.bazelrc
 
 common --enable_bzlmod
 
