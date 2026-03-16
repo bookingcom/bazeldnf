@@ -249,6 +249,8 @@ def _handle_lock_file(config, module_ctx, registered_rpms = {}):
     # - repo_name - apparent repo name where the .rpm file is downloaded to
     packages_metadata = {}
 
+    registered_blobs = {}
+
     if module_ctx.path(config.lock_file).exists:
         content = module_ctx.read(config.lock_file)
         lock_file_json = json.decode(content)
@@ -258,7 +260,7 @@ def _handle_lock_file(config, module_ctx, registered_rpms = {}):
 
         # Create a blob repository for each available rpm in the lock file
         for rpm in lock_file_json.get("rpms", []):
-            _add_blob_rpm_repository(config, rpm, lock_file_json)
+            _add_blob_rpm_repository(config, rpm, lock_file_json, registered_blobs)
 
         # Create repositories for each top-level target with suffixed dependencies
         for target in config.rpms:
@@ -322,8 +324,14 @@ def _get_blob_prefix(rpm_repository_prefix):
         return "blob-"
     return "blob-{}-".format(rpm_repository_prefix)
 
-def _add_blob_rpm_repository(config, rpm, lock_file_json):
+def _add_blob_rpm_repository(config, rpm, lock_file_json, registered_blobs):
     name, _, _ = _normalize_repository_name(rpm, _get_blob_prefix(config.rpm_repository_prefix), config.lock_file)
+
+    # prevent the same blob to be registered more than once, needed for multiple lock files
+    if name in registered_blobs:
+        return
+
+    registered_blobs[name] = 1
 
     repository = rpm.get("repository")
 
