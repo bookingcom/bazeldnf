@@ -24,6 +24,7 @@ common --@protobuf//bazel/toolchains:prefer_prebuilt_protoc
 common --java_runtime_version=remotejdk_21
 
 test --test_tag_filters=-allowed-to-fail
+test --test_env=GO_TEST_WRAP_TESTV=1
 
 # Load any settings & overrides specific to the current user from `.bazelrc.user`.
 # This file should appear in `.gitignore` so that settings are not shared with team members. This
