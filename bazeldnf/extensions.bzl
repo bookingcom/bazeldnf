@@ -262,6 +262,9 @@ def _handle_lock_file(config, module_ctx, registered_rpms = {}):
 
         # Create repositories for each top-level target with suffixed dependencies
         for target in config.rpms:
+            if target not in rpm_lookup:
+                fail("requested rpm %s is not known to the lock file %s" % (target, config.lock_file))
+
             # Build transitive dependency closure for this target
             target_deps = _build_transitive_deps(rpm_lookup, target)
             repo_info = _add_rpm_repository(config, rpm_lookup[target], registered_rpms, dependencies = target_deps)
