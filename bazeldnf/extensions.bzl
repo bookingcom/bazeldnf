@@ -221,7 +221,7 @@ def _build_transitive_deps(rpm_lookup, target_name):
 
     return visited
 
-def _handle_lock_file(config, module_ctx, registered_rpms = {}):
+def _handle_lock_file(config, module_ctx, registered_rpms = {}, registered_blobs = {}):
     if not config.lock_file:
         fail("No lock file provided for %s" % config.name)
 
@@ -258,7 +258,7 @@ def _handle_lock_file(config, module_ctx, registered_rpms = {}):
 
         # Create a blob repository for each available rpm in the lock file
         for rpm in lock_file_json.get("rpms", []):
-            _add_blob_rpm_repository(config, rpm, lock_file_json)
+            _add_blob_rpm_repository(config, rpm, lock_file_json, registered_blobs)
 
         # Create repositories for each top-level target with suffixed dependencies
         for target in config.rpms:
@@ -325,8 +325,14 @@ def _get_blob_prefix(rpm_repository_prefix):
         return "blob-"
     return "blob-{}-".format(rpm_repository_prefix)
 
-def _add_blob_rpm_repository(config, rpm, lock_file_json):
+def _add_blob_rpm_repository(config, rpm, lock_file_json, registered_blobs):
     name, _, _ = _normalize_repository_name(rpm, _get_blob_prefix(config.rpm_repository_prefix), config.lock_file)
+
+    # prevent the same blob to be registered more than once, needed for multiple lock files
+    if name in registered_blobs:
+        return
+
+    registered_blobs[name] = 1
 
     repository = rpm.get("repository")
 
@@ -365,8 +371,6 @@ def _add_rpm_repository(config, rpm, registered_rpms, dependencies = []):
     if name in registered_rpms:
         return registered_rpms[name]
 
-    registered_rpms[name] = 1
-
     rpm_repository(
         name = name,
         dependencies = dependencies,
@@ -390,6 +394,10 @@ def _bazeldnf_extension(module_ctx):
     # make sure all our dependencies are registered as those may be needed when those
     # depending in this repo build the toolchain from sources
     repos = []
+
+    # blobs are unique for the entire bazel workspace
+    registered_blobs = dict()
+
     for mod in module_ctx.modules:
         registered_rpms = dict()
         for config in mod.tags.config:
@@ -398,6 +406,7 @@ def _bazeldnf_extension(module_ctx):
                     config,
                     module_ctx,
                     registered_rpms,
+                    registered_blobs,
                 ),
             )
 
