@@ -10,7 +10,7 @@ rpmtree(
     rpms = [
         "@bazeldnf_rpms//git",
         "@bazeldnf_rpms//glibc",
-        "@bazeldnf_rpms//bash",
+        "@bazeldnf_bash//bash",
     ],
 )
 
