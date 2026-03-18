@@ -99,6 +99,13 @@ _UPDATE_LOCK_FILE_TEMPLATE = """\
 fail("Lock file hasn't been generated for this repository, please run `bazel run @{repo}//:update-lock-file` first")
 """
 
+def _repository_file(path):
+    if path.repo_name == "":
+        if path.package:
+            return "%s/%s" % (path.package, path.name)
+        return path.name
+    fail("lock file can only be updated if it belongs to the bazel workspace")
+
 def _alias_repository_impl(repository_ctx):
     """Creates a repository that aliases other repositories."""
     repository_ctx.file("WORKSPACE", "")
@@ -106,9 +113,9 @@ def _alias_repository_impl(repository_ctx):
 
     repofile = "invalid-repo.yaml"
     if repository_ctx.attr.repofile:
-        repofile = repository_ctx.path(repository_ctx.attr.repofile)
+        repofile = _repository_file(repository_ctx.attr.repofile)
 
-    lock_file_path = repository_ctx.path(repository_ctx.attr.lock_file)
+    lock_file_path = _repository_file(repository_ctx.attr.lock_file)
 
     repository_ctx.file(
         "BUILD.bazel",
