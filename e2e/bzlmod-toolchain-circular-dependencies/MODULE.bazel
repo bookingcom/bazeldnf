@@ -24,12 +24,30 @@ bazeldnf.config(
     ignore_deps = False,
     lock_file = "//:bazeldnf-lock.json",
     repofile = "//:repos.yaml",
+    rpm_repository_prefix = "x86-64",
     rpms = [
+        "bash",
         "git",
         "glibc",
     ],
 )
+bazeldnf.config(
+    name = "bazeldnf_bash",
+    cache_dir = "./.bazeldnf-test-issues-with-ignore-flag",
+    excludes = [
+        "alternatives",
+        "basesystem",
+    ],
+    ignore_deps = False,
+    lock_file = "//:bazeldnf-lock-bash.json",
+    repofile = "//:repos.yaml",
+    rpm_repository_prefix = "x86-64",
+    rpms = [
+        "bash",
+    ],
+)
 use_repo(
     bazeldnf,
+    "bazeldnf_bash",
     "bazeldnf_rpms",
 )

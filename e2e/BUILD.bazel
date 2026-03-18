@@ -146,6 +146,8 @@ default_test_runner(
     bazel_cmds = [
         "run @bazeldnf_rpms//:fetch-repo -- --cache-dir $(pwd)/.bazeldnf",
         "run @bazeldnf_rpms//:update-lock-file -- --cache-dir $(pwd)/.bazeldnf",
+        "run @bazeldnf_bash//:fetch-repo -- --cache-dir $(pwd)/.bazeldnf",
+        "run @bazeldnf_bash//:update-lock-file -- --cache-dir $(pwd)/.bazeldnf",
         "build //...",
     ],
 )
