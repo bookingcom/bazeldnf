@@ -168,6 +168,18 @@ rpm = repository_rule(
     attrs = _rpm_attrs,
 )
 
+def _invalid_rpm_impl(ctx):
+    fail("requested rpm %s is not known to the lock file %s" % (ctx.attr.original_name, ctx.attr.lock_file))
+
+invalid_rpm = repository_rule(
+    implementation = _invalid_rpm_impl,
+    attrs = dict(
+        _rpm_attrs,
+        lock_file = attr.label(),
+        original_name = attr.string(),
+    ),
+)
+
 def _null_rpm_rule_impl(_):
     return [
         RpmInfo(
