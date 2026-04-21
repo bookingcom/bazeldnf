@@ -6,7 +6,7 @@ based on: https://github.com/bazel-contrib/rules-template/blob/0dadcb716f06f6728
 """
 
 load("@bazel_features//:features.bzl", "bazel_features")
-load("//internal:rpm.bzl", rpm_repository = "rpm")
+load("//internal:rpm.bzl", invalid_rpm_repository = "invalid_rpm", rpm_repository = "rpm")
 load(":repositories.bzl", "bazeldnf_register_toolchains")
 
 _DEFAULT_NAME = "bazeldnf"
@@ -269,13 +269,12 @@ def _handle_lock_file(config, module_ctx, registered_rpms = {}, registered_blobs
 
         # Create repositories for each top-level target with suffixed dependencies
         for target in config.rpms:
-            if target not in rpm_lookup:
-                fail("requested rpm %s is not known to the lock file %s" % (target, config.lock_file))
-
-            # Build transitive dependency closure for this target
-            target_deps = _build_transitive_deps(rpm_lookup, target)
-            repo_info = _add_rpm_repository(config, rpm_lookup[target], registered_rpms, dependencies = target_deps)
-
+            if target in rpm_lookup:
+                # Build transitive dependency closure for this target
+                target_deps = _build_transitive_deps(rpm_lookup, target)
+                repo_info = _add_rpm_repository(config, rpm_lookup[target], registered_rpms, dependencies = target_deps)
+            else:
+                repo_info = _add_missing_rpm_repository(config, target, registered_rpms)
             packages_metadata.setdefault(repo_info.get("package", repo_info["id"]), []).append(repo_info)
 
         if not config.rpms:
@@ -383,6 +382,36 @@ def _add_rpm_repository(config, rpm, registered_rpms, dependencies = []):
         dependencies = dependencies,
         create_blob = False,
         blob_mode = True,
+    )
+
+    metadata = {
+        "repo_name": name,
+        "id": id,
+    }
+
+    if package:
+        metadata["package"] = package
+
+    registered_rpms[name] = metadata
+
+    return metadata
+
+def _add_missing_rpm_repository(config, rpm, registered_rpms):
+    repo_prefix = config.rpm_repository_prefix
+    if repo_prefix:
+        repo_prefix = "{}-".format(repo_prefix)
+
+    name, id, package = _normalize_repository_name({"name": rpm}, repo_prefix, config.lock_file)
+
+    # the same rpm may be in the transitive closure of an already explored rpm, but it may be
+    # a requested target, in which case we need to override the previously defined case
+    if name in registered_rpms:
+        return registered_rpms[name]
+
+    invalid_rpm_repository(
+        name = name,
+        original_name = rpm,
+        lock_file = config.lock_file,
     )
 
     metadata = {
