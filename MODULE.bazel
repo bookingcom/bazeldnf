@@ -4,7 +4,6 @@ module(
     name = "bazeldnf",
     version = "v0.0.0",
     bazel_compatibility = [">=7.0.0"],
-    compatibility_level = 0,
 )
 
 bazeldnf_toolchain = use_extension("//bazeldnf:extensions.bzl", "bazeldnf_toolchain")
@@ -23,13 +22,13 @@ bazel_dep(name = "bazel_features", version = "1.41.0")
 bazel_dep(name = "bazel_lib", version = "3.2.0")
 
 # if someone wants to build the bazeldnf toolchain from sources needs this set of dependencies
-bazel_dep(name = "gazelle", version = "0.47.0")
-bazel_dep(name = "rules_go", version = "0.60.0")
+bazel_dep(name = "gazelle", version = "0.47.0", dev_dependency = True)
+bazel_dep(name = "rules_go", version = "0.60.0", dev_dependency = True)
 
 go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk", dev_dependency = True)
 go_sdk.download(version = "1.24.1")
 
-go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps")
+go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps", dev_dependency = True)
 go_deps.from_file(go_mod = "//:go.mod")
 use_repo(
     go_deps,
